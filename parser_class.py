@@ -64,21 +64,15 @@ class Parser:
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             add_help=False
         )
-
-        self.__p.add_argument('-c', '--console',
-                              action='store_true',
-                              default=False,
-                              help='flag for running program in console mode.')
-        known, _ = self.__p.parse_known_args()
         self.__p.add_argument('-h', '--help', action='help',
                               default=argparse.SUPPRESS,
                               help='Show this help message and exit.')
-        self.__p.add_argument('--path', required=known.console, metavar='',
+        self.__p.add_argument('--path', required=True, metavar='',
                               type=is_path, help='Path to database file.')
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
                                         help='Choice of algorithm.',
-                                        required=known.console)
+                                        required=True)
         self.__ants_params(sub_p)
         self.__genetic_params(sub_p)
 
