@@ -1,4 +1,4 @@
-import argparse
+from __init__ import argparse
 import os
 
 
@@ -33,6 +33,9 @@ def positive(num_type: type):
         num_type - numeric type of the variable.
     """
     def positive_checker(arg) -> num_type:
+        """ New Type function for argparse - a positive number of passed
+            num_type.
+        """
         try:
             f = num_type(arg)
         except ValueError:
@@ -47,12 +50,15 @@ def positive(num_type: type):
     return positive_checker
 
 
-def is_path(path):
+def is_path(path: str) -> str:
+    """ New Type function for argparse - gets path, ensures it is absolute path
+        and checks if the file exists.
+    """
     if not os.path.isabs(path):
         path = os.path.realpath(__file__).split("\\")[0:-1] + [path]
         path = "\\".join(path)
     if not os.path.isfile(path):
-        raise argparse.ArgumentTypeError('Given file does not exist')
+        raise argparse.ArgumentTypeError(f'{path}\nGiven file does not exist.')
     return path
 
 
@@ -60,15 +66,15 @@ class Parser:
     def __init__(self) -> None:
         self.__p = argparse.ArgumentParser(
             prog='TSP solver',
-            description='Program for solving of TSP using different methods',
+            description='Program for solving of TSP using different methods.',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             add_help=False
         )
         self.__p.add_argument('-h', '--help', action='help',
                               default=argparse.SUPPRESS,
                               help='Show this help message and exit.')
-        self.__p.add_argument('--path', required=True, metavar='',
-                              type=is_path, help='Path to database file.')
+        self.__p.add_argument('path', metavar='', type=is_path,
+                              help='Path to database file.')
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
                                         help='Choice of algorithm.',
