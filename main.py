@@ -1,6 +1,5 @@
 from parser_class import Parser
 from console_app import Console_App
-import sys
 
 
 if __name__ == '__main__':
@@ -10,4 +9,5 @@ if __name__ == '__main__':
     # TODO add logger
 
     # run app
-    run = Console_App(args)
+    app = Console_App(args)
+    app.run()
