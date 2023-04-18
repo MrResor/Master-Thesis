@@ -96,7 +96,7 @@ class Parser:
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
                                         help='Choice of algorithm.')
-        print(type(sub_p))
+        # Outside add_subparser to not cause problems with python 3.6.8
         sub_p.required = True
         self.__ants_params(sub_p)
         self.__genetic_params(sub_p)
