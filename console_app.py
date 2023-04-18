@@ -5,7 +5,31 @@ from __init__ import argparse, logging, np, sqlite3
 
 
 class Console_App:
+    """ Program Class. Inside it whole utility of program is done. It further
+        processes the parameters obtained from parser. First it reads data
+        from provided database, then runs chosen algorithm for the given data.
+        \n
+
+        Attributes:\n
+        d                   -- Distance matrix obtained from database file.\n
+        size                -- Number of nodes in database.\n
+        algo                -- Holds object of class matching the one chosen
+        by user.\n
+
+        Methods:\n
+        load_data           -- Loads data from given database.\n
+        setup_algorithm     -- Based on the chosen algorithm selects
+        parameters from parsed arguments and creates object of the class
+        matching the algorithm with the aformentioned arguments.\n
+        run                 -- Runs the prepaired algorithm.
+    """
+
     def __init__(self, args: argparse.Namespace) -> None:
+        """ Initialization of Console_App class, crates logging file, loads
+            the data from database and setups algorithm based on the arguments
+            passed to command line. Takes Namespace of arguments as parameter.
+        """
+
         curr_time = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
         logging.basicConfig(filename=curr_time + '.log',
                             level=logging.INFO,
@@ -14,9 +38,14 @@ class Console_App:
         self.load_data(args.path)
         self.setup_algorithm(args)
 
-    # TODO decorator to catch errors
     @db_handler
     def load_data(self, path) -> None:
+        """ Function reading data from databas, such us number of nodes and
+            distances between nodes. Takes path do database file as parameter.
+        """
+
+        # TODO add possibility of reading data from csv file, due to sqlite3
+        # problems on ziemowit cluster
         logging.info('Loading Database: %s',
                      path,
                      extra={'runtime': 0})
@@ -35,7 +64,11 @@ class Console_App:
         logging.info('Database successfully loaded.',
                      extra={'runtime': 0})
 
-    def setup_algorithm(self, args) -> None:
+    def setup_algorithm(self, args: argparse.Namespace) -> None:
+        """ Setups the algorithm for solving TSP problem based on the parsed
+            command line arguments.
+        """
+
         choice = {'ants': Ant, 'genetic': Genetic}
         params_names = {'ants': ['tours', 'alpha', 'beta', 'rho'],
                         'genetic': ['initial_population',
@@ -52,4 +85,8 @@ class Console_App:
         self.algo = choice[args.algorithm](params)
 
     def run(self) -> None:
+        """ Function reading data from databas, such us number of nodes and
+            distances between nodes. Takes path do database file as parameter.
+        """
+
         self.algo.run(self.d, self.size)
