@@ -1,8 +1,15 @@
 from __init__ import logging, sqlite3
+from typing import Callable
 
 
-def db_handler(func):
+def db_handler(func) -> Callable[..., None]:
+    """ Decorator returning function for handling sqlite3 errors.
+    """
+
     def db_decorator(self, path) -> None:
+        """ Inner functions, catches the error and quits the program.
+        """
+
         try:
             func(self, path)
         except sqlite3.OperationalError as err:
