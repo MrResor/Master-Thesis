@@ -77,8 +77,8 @@ class Parser:
                               help='Path to database file.')
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
-                                        help='Choice of algorithm.',
-                                        required=True)
+                                        help='Choice of algorithm.')
+        sub_p.required = True
         self.__ants_params(sub_p)
         self.__genetic_params(sub_p)
 
