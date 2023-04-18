@@ -32,10 +32,12 @@ def positive(num_type: type):
         if it is positive.\n
         num_type - numeric type of the variable.
     """
+
     def positive_checker(arg) -> num_type:
         """ New Type function for argparse - a positive number of passed
             num_type.
         """
+
         try:
             f = num_type(arg)
         except ValueError:
@@ -54,6 +56,7 @@ def is_path(path: str) -> str:
     """ New Type function for argparse - gets path, ensures it is absolute path
         and checks if the file exists.
     """
+
     if not os.path.isabs(path):
         path = os.path.realpath(__file__).split("\\")[0:-1] + [path]
         path = "\\".join(path)
@@ -82,6 +85,7 @@ class Parser:
             flag and path positional argumentand calls all the functions to
             create subparsers for each algorithm.
         """
+
         self.__p = argparse.ArgumentParser(
             prog='TSP solver',
             description='Program for solving of TSP using different methods.',
@@ -107,6 +111,7 @@ class Parser:
             _SubParsersAction as parameter. The parameters are: tours, alpha,
             beta, rho.
         """
+
         ants = sub_p.add_parser(
             'ants', formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             add_help=False)
@@ -133,6 +138,7 @@ class Parser:
             multiplier of initial population, probability of mutation, nuber
             of generations.
         """
+
         genetic = sub_p.add_parser(
             'genetic', formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             add_help=False)
@@ -157,4 +163,5 @@ class Parser:
         """ Parses the arguments passed in command line and returns the
             Namespace holding them.
         """
+
         return self.__p.parse_args()
