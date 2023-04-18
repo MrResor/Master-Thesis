@@ -1,4 +1,5 @@
-from __init__ import np
+from __init__ import np, logging
+import time
 
 
 class Genetic:
@@ -11,29 +12,31 @@ class Ant:
         self.tours, self.alpha, self.beta, self.rho = params.values()
 
     def run(self, d, size) -> None:
+        start = time.perf_counter()
+        logging.info("Staring algorithm",
+                     extra={'runtime': time.perf_counter() - start})
         self.d = d
         self.size = size
         best = self.ants_tables()
         for trip in range(self.tours):
-            print('Trip', trip)
+            logging.info('Trip %s',
+                         str(trip),
+                         extra={'runtime': time.perf_counter() - start})
             self.ant_and_a()
             self.ants_traveling()
-            # TODO there has to be a better way
-            min = np.Inf
-            index = 0
-            for i in range(self.size):
-                if self.ant[i][self.size] < min:
-                    index = i
-                    min = self.ant[i][self.size]
+            index = np.argmin(self.ant[:, self.size])
             if best[self.size] > self.ant[index][self.size]:
                 best = self.ant[index]
             self.pheromones()
-        print(best)
+        logging.info('Finished.',
+                     extra={'runtime': time.perf_counter() - start})
+        logging.info('Best Distance: %s',
+                     str(best[self.size]),
+                     extra={'runtime': None})
 
     def ants_tables(self) -> np.ndarray:
         # fucntion for creating necessary tables
         self.tau = np.full((self.size, self.size), 1/self.d.max())
-        self.a = np.full((self.size, self.size), 0.0)
         self.n = 1/self.d
         np.fill_diagonal(self.n, 0)
         best = np.full(self.size + 1, 0.0)
@@ -45,7 +48,7 @@ class Ant:
         self.ant = np.full((self.size, self.size + 1),
                            self.size + 1, dtype="object")
         self.ant[:, self.size] = float(0)
-        self.a = np.power(self.tau, self.alpha) * np.power(self.n, self.beta)
+        self.a = self.tau ** self.alpha * self.n ** self.beta
         self.start = np.random.randint(0, self.size, self.size)
         self.a = [val / sum(val) for val in self.a]
 
