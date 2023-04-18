@@ -63,7 +63,25 @@ def is_path(path: str) -> str:
 
 
 class Parser:
+    """ Class that holds parser and performs parsing of command line arguments
+        using argparse module.\n
+
+        Attributes:\n
+        __p                 -- Holds main argument parser of the program.\n
+        sub_p               -- Holds subparsers for each method.\n
+
+        Methods:\n
+        __ants_params       -- Creates subparser for ants colony algorithm's
+        parameters.\n
+        __genetic_params    -- Creates subparser for genetic algorithm's
+        parameters.
+    """
+
     def __init__(self) -> None:
+        """ Initialization of Parser class, creates main parser __p with help
+            flag and path positional argumentand calls all the functions to
+            create subparsers for each algorithm.
+        """
         self.__p = argparse.ArgumentParser(
             prog='TSP solver',
             description='Program for solving of TSP using different methods.',
@@ -78,11 +96,17 @@ class Parser:
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
                                         help='Choice of algorithm.')
+        print(type(sub_p))
         sub_p.required = True
         self.__ants_params(sub_p)
         self.__genetic_params(sub_p)
 
     def __ants_params(self, sub_p) -> None:
+        """ Initialization of subparser for ants algorithm with help flag and
+            4 optional parameters that have influence on the algorithm. Takes
+            _SubParsersAction as parameter. The parameters are: tours, alpha,
+            beta, rho.
+        """
         ants = sub_p.add_parser(
             'ants', formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             add_help=False)
@@ -102,6 +126,13 @@ class Parser:
                           'evaporation.')
 
     def __genetic_params(self, sub_p) -> None:
+        """ Initialization of subparser for genetic algorithm with help flag
+            and 4 optional parameters that have influence on the algorithm.
+            Takes _SubParsersAction as parameter. The parameters are: inital
+            population size, size of children population expressed as a
+            multiplier of initial population, probability of mutation, nuber
+            of generations.
+        """
         genetic = sub_p.add_parser(
             'genetic', formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             add_help=False)
@@ -123,4 +154,7 @@ class Parser:
                              help='Number of generations.')
 
     def parse(self) -> argparse.Namespace:
+        """ Parses the arguments passed in command line and returns the
+            Namespace holding them.
+        """
         return self.__p.parse_args()
