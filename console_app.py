@@ -1,7 +1,8 @@
 from algorithms import Ant, Genetic
 from decorators import db_handler
 from datetime import datetime
-from __init__ import argparse, logging, np, sqlite3
+from __init__ import argparse, logging, np
+import pandas as pd
 
 
 class Console_App:
@@ -38,7 +39,6 @@ class Console_App:
         self.load_data(args.path)
         self.setup_algorithm(args)
 
-    @db_handler
     def load_data(self, path) -> None:
         """ Function reading data from databas, such us number of nodes and
             distances between nodes. Takes path do database file as parameter.
@@ -50,16 +50,11 @@ class Console_App:
                      path,
                      extra={'runtime': 0})
         # TODO sprawdzić jakoś format bazy danych
-        con = sqlite3.connect(path)
-        cur = con.cursor()
-        cur.execute('SELECT * FROM Distance')
-        temp = cur.fetchall()
-        cur.execute('SELECT COUNT(*) FROM Cities')
-        self.size = cur.fetchone()[0]
-        cur.close()
+        df = pd.read_csv(path)
+        self.size = df[['from', 'to']].values.max()
         self.d = np.zeros((self.size, self.size))
-        for t in temp:
-            self.d[t[0]-1][t[1]-1] = t[2]
+        for t in df.values:
+            self.d[int(t[0])-1][int(t[1])-1] = t[2]
         self.d += self.d.transpose()
         logging.info('Database successfully loaded.',
                      extra={'runtime': 0})
