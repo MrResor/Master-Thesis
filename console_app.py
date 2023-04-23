@@ -1,5 +1,4 @@
 from algorithms import Ant, Genetic
-from decorators import db_handler
 from datetime import datetime
 from __init__ import argparse, logging, np
 import pandas as pd
@@ -8,17 +7,17 @@ import pandas as pd
 class Console_App:
     """ Program Class. Inside it whole utility of program is done. It further
         processes the parameters obtained from parser. First it reads data
-        from provided database, then runs chosen algorithm for the given data.
+        from provided .csv file, then runs chosen algorithm for the given data.
         \n
 
         Attributes:\n
-        d                   -- Distance matrix obtained from database file.\n
-        size                -- Number of nodes in database.\n
+        d                   -- Distance matrix obtained from csv file.\n
+        size                -- Number of nodes in loaded problem.\n
         algo                -- Holds object of class matching the one chosen
         by user.\n
 
         Methods:\n
-        load_data           -- Loads data from given database.\n
+        load_data           -- Loads data from given .csv file.\n
         setup_algorithm     -- Based on the chosen algorithm selects
         parameters from parsed arguments and creates object of the class
         matching the algorithm with the aformentioned arguments.\n
@@ -27,7 +26,7 @@ class Console_App:
 
     def __init__(self, args: argparse.Namespace) -> None:
         """ Initialization of Console_App class, crates logging file, loads
-            the data from database and setups algorithm based on the arguments
+            the data from .csv file and setups algorithm based on the arguments
             passed to command line. Takes Namespace of arguments as parameter.
         """
 
@@ -40,13 +39,11 @@ class Console_App:
         self.setup_algorithm(args)
 
     def load_data(self, path) -> None:
-        """ Function reading data from databas, such us number of nodes and
-            distances between nodes. Takes path do database file as parameter.
+        """ Function reading data from .csv file, such us number of nodes and
+            distances between nodes. Takes path to the file as parameter.
         """
 
-        # TODO add possibility of reading data from csv file, due to sqlite3
-        # problems on ziemowit cluster
-        logging.info('Loading Database: %s',
+        logging.info('Loading data from: %s',
                      path,
                      extra={'runtime': 0})
         # TODO sprawdzić jakoś format bazy danych
@@ -56,7 +53,7 @@ class Console_App:
         for t in df.values:
             self.d[int(t[0])-1][int(t[1])-1] = t[2]
         self.d += self.d.transpose()
-        logging.info('Database successfully loaded.',
+        logging.info('Data successfully loaded.',
                      extra={'runtime': 0})
 
     def setup_algorithm(self, args: argparse.Namespace) -> None:
@@ -80,8 +77,7 @@ class Console_App:
         self.algo = choice[args.algorithm](params)
 
     def run(self) -> None:
-        """ Function reading data from databas, such us number of nodes and
-            distances between nodes. Takes path do database file as parameter.
+        """ Function running the prepaired algorithm.
         """
 
         self.algo.run(self.d, self.size)
