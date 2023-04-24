@@ -1,6 +1,7 @@
 from algorithms import Ant, Genetic
 from datetime import datetime
 from __init__ import argparse, logging, np
+from decorators import load_handler
 import pandas as pd
 
 
@@ -38,6 +39,7 @@ class Console_App:
         self.load_data(args.path)
         self.setup_algorithm(args)
 
+    @load_handler
     def load_data(self, path) -> None:
         """ Function reading data from .csv file, such us number of nodes and
             distances between nodes. Takes path to the file as parameter.
@@ -47,7 +49,7 @@ class Console_App:
                      path,
                      extra={'runtime': 0})
         df = pd.read_csv(path)
-        self.size = df[['from', 'to']].values.max()
+        self.size = df[['from', 'a']].values.max()
         self.d = np.zeros((self.size, self.size))
         for t in df.values:
             self.d[int(t[0])-1, int(t[1])-1] = t[2]
