@@ -49,7 +49,8 @@ class Console_App:
                      path,
                      extra={'runtime': 0})
         df = pd.read_csv(path)
-        self.size = df[['from', 'a']].values.max()
+        self.size = df[['from', 'to']].values.max()
+        df[['dist']].values.max()  # check if the dist column exists
         self.d = np.zeros((self.size, self.size))
         for t in df.values:
             self.d[int(t[0])-1, int(t[1])-1] = t[2]
