@@ -62,6 +62,8 @@ def is_path(path: str) -> str:
         path = "\\".join(path)
     if not os.path.isfile(path):
         raise argparse.ArgumentTypeError(f'{path}\nGiven file does not exist.')
+    if not path.endswith('.csv'):
+        raise argparse.ArgumentTypeError(f'{path}\nPlease use .csv file.')
     return path
 
 
