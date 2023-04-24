@@ -46,12 +46,11 @@ class Console_App:
         logging.info('Loading data from: %s',
                      path,
                      extra={'runtime': 0})
-        # TODO sprawdzić jakoś format bazy danych
         df = pd.read_csv(path)
         self.size = df[['from', 'to']].values.max()
         self.d = np.zeros((self.size, self.size))
         for t in df.values:
-            self.d[int(t[0])-1][int(t[1])-1] = t[2]
+            self.d[int(t[0])-1, int(t[1])-1] = t[2]
         self.d += self.d.transpose()
         logging.info('Data successfully loaded.',
                      extra={'runtime': 0})
