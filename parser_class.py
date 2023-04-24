@@ -97,6 +97,7 @@ class Parser:
                               help='Show this help message and exit.')
         self.__p.add_argument('path', metavar='', type=is_path,
                               help='Path to database file.')
+        # TODO add parametr for controling cities in the problem.
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
                                         help='Choice of algorithm.')
