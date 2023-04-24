@@ -1,8 +1,8 @@
-from __init__ import logging, sqlite3
+from __init__ import logging
 from typing import Callable
 
 
-def db_handler(func) -> Callable[..., None]:
+def load_handler(func) -> Callable[..., None]:
     """ Decorator returning function for handling sqlite3 errors.
     """
 
@@ -12,7 +12,7 @@ def db_handler(func) -> Callable[..., None]:
 
         try:
             func(self, path)
-        except sqlite3.OperationalError as err:
+        except KeyError as err:
             logging.info(str(err).capitalize() + '.',
                          extra={'runtime': 0})
             logging.info('Quitting with error code 1.',
