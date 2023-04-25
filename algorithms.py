@@ -97,25 +97,24 @@ class Ant:
                             self.size + 1, dtype="object")
         self.ants[:, self.size] = float(0)
         self.a = self.tau ** self.alpha * self.n ** self.beta
-        self.start = np.random.randint(0, self.size, self.size)
-        self.a = [val / sum(val) for val in self.a]
+        self.start = np.random.randint(0, self.size, self.size, dtype='int32')
+        self.a /= self.a.sum(axis=1, keepdims=True)
 
     def ants_traveling(self) -> None:
         """ Simulates the behaviour and the traveling of ants in search of the
             optimal path.
         """
         self.ants[:, 0] = self.start
-        for i in range(self.size):
+        for ant in self.ants:
             for j in range(1, self.size):
-                self.p = [self.a[self.ants[i, j-1]][q] *
-                          (q not in self.ants[i]) for q in range(self.size)]
-                self.p = [val / sum(self.p) for val in self.p]
-                q = np.argmax(np.random.multinomial(1, self.p, size=1))
-                self.ants[i][j] = q
-                self.ants[i][self.size] += self.d[
-                    self.ants[i][j - 1]][self.ants[i][j]]
-            self.ants[i][self.size] += self.d[
-                self.ants[i][self.size-1]][self.ants[i][0]]
+                p = [self.a[ant[j-1], q] * (q not in ant[0:-1])
+                     for q in range(self.size)]
+                p /= np.sum(p)
+                q = np.argmax(np.random.multinomial(1, p, size=1))
+                ant[j] = int(q)
+            ant[self.size] = self.d[
+                ant[0:-1].astype('int32'), np.roll(ant[
+                    0:-1], -1).astype('int32')].sum()
 
     def pheromones(self) -> None:
         """ Updates the ammount of pheromone on each edge represented by tau.
@@ -123,13 +122,8 @@ class Ant:
 
         self.tau *= (1-self.rho)
         # TODO check if np.roll can do this faster
-        for i in range(self.size):
-            for j in range(1, self.size):
-                self.tau[self.ants[i][j - 1]][
-                    self.ants[i][j]] += 1/self.ants[i][self.size]
-                self.tau[self.ants[i][j]][
-                    self.ants[i][j - 1]] += 1/self.ants[i][self.size]
-            self.tau[self.ants[i][0]][
-                self.ants[i][self.size - 1]] += 1/self.ants[i][self.size]
-            self.tau[self.ants[i][self.size - 1]][
-                self.ants[i][0]] += 1/self.ants[i][self.size]
+        for i, ant in enumerate(self.ants):
+            self.tau[ant[0:-1].astype('int32'), np.roll(ant[
+                0:-1], -1).astype('int32')] += 1/ant[self.size]
+            self.tau[ant[0:-1].astype('int32'), np.roll(ant[
+                0:-1], 1).astype('int32')] += 1/ant[self.size]
