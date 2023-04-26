@@ -67,9 +67,9 @@ def is_path(path: str) -> str:
     return path
 
 
-def city_list(path: str):
-    cities = []
-    return cities
+# def city_list(path: str):
+#     cities = []
+#     return cities
 
 
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -111,9 +111,9 @@ class Parser:
                               help='Show this help message and exit.')
         self.__p.add_argument('path', metavar='', type=is_path,
                               help='Path to database file.')
-        self.__p.add_argument('-c', '--cities', type=city_list, default='[]',
-                              help='Specifies list of cities to '
-                              'use during program runtime.')
+        # self.__p.add_argument('-c', '--cities', type=city_list, default='[]',
+        #                       help='Specifies list of cities to '
+        #                       'use during program runtime.')
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
                                         help='Choice of algorithm.')
