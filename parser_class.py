@@ -67,6 +67,18 @@ def is_path(path: str) -> str:
     return path
 
 
+def city_list(path: str):
+    cities = []
+    return cities
+
+
+class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    def _format_action_invocation(self, action) -> str:
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        return ', '.join(action.option_strings)
+
+
 class Parser:
     """ Class that holds parser and performs parsing of command line arguments
         using argparse module.\n
@@ -91,7 +103,7 @@ class Parser:
         self.__p = argparse.ArgumentParser(
             prog='TSP solver',
             description='Program for solving of TSP using different methods.',
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            formatter_class=lambda prog: CustomHelpFormatter(prog),
             add_help=False
         )
         self.__p.add_argument('-h', '--help', action='help',
@@ -99,7 +111,9 @@ class Parser:
                               help='Show this help message and exit.')
         self.__p.add_argument('path', metavar='', type=is_path,
                               help='Path to database file.')
-        # TODO add parametr for controling cities in the problem.
+        self.__p.add_argument('-c', '--cities', type=city_list, default='[]',
+                              help='Specifies list of cities to '
+                              'use during program runtime.')
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
                                         help='Choice of algorithm.')
@@ -116,21 +130,21 @@ class Parser:
         """
 
         ants = sub_p.add_parser(
-            'ants', formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            'ants', formatter_class=lambda prog: CustomHelpFormatter(prog),
             add_help=False)
         ants.add_argument('-h', '--help', action='help',
                           default=argparse.SUPPRESS,
-                          help='\b\b\b\bShow this help message and exit.')
+                          help='Show this help message and exit.')
         ants.add_argument('-t', '--tours', type=positive(int), default=40,
-                          metavar='\b', help='Number of tours.')
+                          help='Number of tours.')
         ants.add_argument('-a', '--alpha', type=positive(float), default=1,
-                          metavar='\b', help='Variable controling impact of '
+                          help='Variable controling impact of '
                           'pheromones between nodes.')
         ants.add_argument('-b', '--beta', type=positive(float), default=2,
-                          metavar='\b', help='Variable controling impact of '
+                          help='Variable controling impact of '
                           'distance between nodes.')
         ants.add_argument('-p', '--rho', type=frange(0, 1), default=0.5,
-                          metavar='\b', help='Variable controling pheromone '
+                          help='Variable controling pheromone '
                           'evaporation.')
 
     def __genetic_params(self, sub_p) -> None:
@@ -143,21 +157,20 @@ class Parser:
         """
 
         genetic = sub_p.add_parser(
-            'genetic', formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            'genetic',
+            formatter_class=lambda prog: CustomHelpFormatter(
+                prog, max_help_position=30),
             add_help=False)
         genetic.add_argument('-h', '--help', action='help',
                              default=argparse.SUPPRESS,
                              help='Show this help message and exit.')
         genetic.add_argument('-P', '--initial-population', type=int,
-                             default=250, metavar='\b',
-                             help='Size of initial population.')
+                             default=250, help='Size of initial population.')
         genetic.add_argument('-n', '--children-multiplier', type=float,
-                             default=0.8, metavar='\b',
-                             help='Multiplier for children populaion size '
-                             '(P * n)')
+                             default=0.8, help='Multiplier for children '
+                             'populaion size (P * n)')
         genetic.add_argument('-p', '--mutation-probability', type=float,
-                             default=0.5, metavar='\b',
-                             help='Mutation rate for offsprings.')
+                             default=0.5, help='Mutation rate for offsprings.')
         genetic.add_argument('-T', '--generation-count', type=int,
                              default=500, metavar='\b',
                              help='Number of generations.')
