@@ -1,4 +1,4 @@
-from algorithms import Ant, Genetic
+from algorithms import Ant, Genetic, smallest_vertice_algorithm
 from datetime import datetime
 from __init__ import argparse, logging, np
 from decorators import load_handler
@@ -63,12 +63,14 @@ class Console_App:
             command line arguments.
         """
 
-        choice = {'ants': Ant, 'genetic': Genetic}
+        choice = {'ants': Ant, 'genetic': Genetic,
+                  'sva': smallest_vertice_algorithm}
         params_names = {'ants': ['tours', 'alpha', 'beta', 'rho'],
                         'genetic': ['initial_population',
                                     'children_multiplier',
                                     'mutation_probability',
                                     'generation_count'],
+                        'sva': [],
                         }
         params = vars(args)
         params = {key: params[key] for key in params_names[args.algorithm]}
