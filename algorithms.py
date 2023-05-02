@@ -4,80 +4,102 @@ import time
 
 class Genetic:
     def __init__(self, params: dict) -> None:
+        """ Initialization of Genetic class, takes dict as parameter and assigns
+            values from it into corresponding variables.
+        """
+
         self.P, self.n, self.p, self.T = params.values()
 
     def run(self, d, size) -> None:
+        """ Runs the algorithm. Takes distance matrix and number of nodes as
+            parameters using the parameters set in __init__ performs a
+            simulation of Ant Colony finding shortest path.
+        """
 
         start = time.perf_counter()
         logging.info("Staring algorithm",
                      extra={'runtime': time.perf_counter() - start})
         self.d = d
         self.size = size
+        self.parents_and_best()
+
+        # Simulate all the generations
+        self.mating_pool = int(self.n*self.P)
+        if self.mating_pool & 0x1:
+            self.mating_pool -= 1
+        for gen in range(self.T):
+            logging.info('Generation %s',
+                         str(gen),
+                         extra={'runtime': time.perf_counter() - start})
+            self.select_and_mate()
+            self.mutate_evaluate_cull()
+
+        logging.info('Finished.',
+                     extra={'runtime': time.perf_counter() - start})
+        logging.info('Best Distance: %s',
+                     str(self.best[-1]),
+                     extra={'runtime': 0})
+
+    def parents_and_best(self) -> None:
         # Prepaire container for best and parents
-        best = np.arange(self.size + 1, dtype='object')
-        best[-1:] = np.Inf
-        parents = np.zeros((self.P, self.size + 1), dtype='object')
-        for parent in parents:
+        self.best = np.arange(self.size + 1, dtype='object')
+        self.best[-1:] = np.Inf
+        self.parents = np.zeros((self.P, self.size + 1), dtype='object')
+        for parent in self.parents:
             parent[:-1] = np.random.permutation(self.size)
-            parent[-1:] = self.d[
+            parent[-1] = self.d[
                 parent[:-1].astype('int32'),
                 np.roll(parent[:-1], -1).astype('int32')
             ].sum()
 
-        # Simulate all the generations
-        mating_pool = int(self.n*self.P)
-        if mating_pool & 0x1:
-            mating_pool -= 1
-        for gen in range(self.T):
-            # Selecting parents for mating and pair them together
-            fitness = np.copy(parents[:, -1:])
-            probs = np.max(fitness) + 1 - fitness
-            probs /= np.sum(probs)
-            mating = np.random.choice(np.arange(self.P),
-                                      mating_pool,
-                                      False,
-                                      probs)
-            mating = np.random.choice(mating, (int(mating_pool/2), 2), False)
-            # Mating
-            children = np.zeros((mating_pool, self.count + 1))
-            for pair, (p1, p2) in enumerate(mating):
-                child1 = np.copy(parents[p2, :-1])
-                child2 = np.copy(parents[p1, :-1])
+    def select_and_mate(self) -> None:
+        # Selecting parents for mating and pair them together
+        fitness = np.copy(self.parents[:, -1])
+        probs = np.max(fitness) + 1 - fitness
+        probs /= np.sum(probs)
+        mating = np.random.choice(np.arange(self.P),
+                                  self.mating_pool,
+                                  False,
+                                  probs.astype('float64').flatten())
+        mating = np.random.choice(mating, (int(self.mating_pool/2), 2), False)
+        # Mating
+        self.children = np.zeros((self.mating_pool, self.size + 1))
+        for pair, (p1, p2) in enumerate(mating):
+            child1 = np.copy(self.parents[p2, :-1])
+            child2 = np.copy(self.parents[p1, :-1])
 
-                gene = 0
+            gene = 0
+            child1[gene], child2[gene] = child2[gene], child1[gene]
+            while child1.shape != np.unique(child1).shape:
+                res = np.where(child1 == child1[gene])[0]
+                gene = res[np.where(res != gene)[0][0]]
                 child1[gene], child2[gene] = child2[gene], child1[gene]
-                while child1.shape != np.unique(child1).shape:
-                    res = np.where(child1 == child1[gene])[0]
-                    gene = res[np.where(res != gene)[0][0]]
-                    child1[gene], child2[gene] = child2[gene], child1[gene]
 
-                children[2*pair, :-1] = child1
-                children[2*pair + 1, :-1] = child2
+            self.children[2*pair, :-1] = child1
+            self.children[2*pair + 1, :-1] = child2
 
-            # Mutation
-            mutation = np.random.rand(mating_pool)
-            mutation = np.where(mutation >= self.p)[0]
-            genes = np.random.choice(np.arange(self.size),
-                                     (mutation.shape[0], 2))
-            for m, (g1, g2) in zip(mutation, genes):
-                children[m,
-                         g1], children[m, g2] = children[m, g2], children[m, g1]
+    def mutate_evaluate_cull(self) -> None:
+        # Mutation
+        mutation = np.random.rand(self.mating_pool)
+        mutation = np.where(mutation >= self.p)[0]
+        genes = np.random.choice(np.arange(self.size),
+                                 (mutation.shape[0], 2))
+        for m, (g1, g2) in zip(mutation, genes):
+            child = self.children[m, :]
+            child[g1], child[g2] = child[g2], child[g1]
 
-            # Evaluate children
-            for child in children:
-                child[-1:] = self.d[
-                    child[:-1].astype('int32'),
-                    np.roll(child[:-1], -1).astype('int32')
-                ].sum()
-
-            # Create new parents
-            cross_gen = np.concatenate((parents, children), axis=0)
-            cross_gen = cross_gen[cross_gen[:, -1:].argsort(), :]
-            parents = cross_gen[:self.P]
-            if parents[0, -1:] < best[-1:]:
-                best = parents[0]
-
-        print(best[-1:])
+        # Evaluate children
+        for child in self.children:
+            child[-1] = self.d[
+                child[:-1].astype('int32'),
+                np.roll(child[:-1], -1).astype('int32')
+            ].sum()
+        # Create new parents
+        cross_gen = np.concatenate((self.parents, self.children), axis=0)
+        cross_gen = cross_gen[cross_gen[:, -1].argsort()]
+        self.parents = cross_gen[:self.P, :]
+        self.best = self.parents[0, :] if self.best[-1] > self.parents[
+            0, -1] else self.best
 
 
 class Ant:
@@ -145,7 +167,7 @@ class Ant:
         logging.info('Finished.',
                      extra={'runtime': time.perf_counter() - start})
         logging.info('Best Distance: %s',
-                     str(best[self.size]),
+                     str(best[-1]),
                      extra={'runtime': 0})
 
     def ants_tables(self) -> np.ndarray:
