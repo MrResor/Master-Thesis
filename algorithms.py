@@ -42,8 +42,8 @@ class Genetic:
 
     def run(self, d: np.ndarray, size: int) -> None:
         """ Runs the algorithm. Takes distance matrix and number of nodes as
-            parameters using the parameters set in __init__ performs a
-            simulation of Ant Colony finding shortest path.
+            parameters and using the parameters set in __init__ performs a
+            simulation of survival of the fittest.
         """
 
         start = time.perf_counter()
@@ -186,7 +186,7 @@ class Ant:
 
     def run(self, d: np.ndarray, size: int) -> None:
         """ Runs the algorithm. Takes distance matrix and number of nodes as
-            parameters using the parameters set in __init__ performs a
+            parameters and using the parameters set in __init__ performs a
             simulation of Ant Colony finding shortest path.
         """
 
@@ -266,12 +266,22 @@ class Ant:
                 0:-1], 1).astype('int32')] += 1/ant[self.size]
 
 
-class smallest_vertice_algorithm:
+class smallest_edge_algorithm:
+    """ Class of Smallest Edge Algorithm. Because the method itself is so
+        simple, it consists of single function that performs the algorithm.\n
+
+        Methods:\n
+        run             -- Runs the algorithm with the parameters with the
+        distance matrix passed.
+    """
+
     def __init__(self, params) -> None:
         pass
 
     def run(self, d: np.ndarray, size: int) -> None:
-
+        """ Runs the algorithm. Takes distance matrix and number of nodes and
+            performs the algorithm.
+        """
         # transform distance matrix into list of vertices, with no duplicates.
         ind = np.triu_indices(size, 1)
         d = np.array([[i1, i2, i3]
