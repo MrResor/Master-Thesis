@@ -1,8 +1,9 @@
 from __init__ import argparse
 import os
+from typing import Callable
 
 
-def frange(min: float, max: float):
+def frange(min: float, max: float) -> Callable[..., float]:
     """ Return function handle of an argument type function for
         ArgumentParser checking a float range: min <= arg <= max.\n
         min - Minimum acceptable argument.\n
@@ -17,16 +18,18 @@ def frange(min: float, max: float):
             f = float(arg)
         except ValueError:
             raise argparse.ArgumentTypeError(
-                'Must be a floating point number.')
+                'Must be a floating point number.'
+            )
         if f < min or f > max:
             raise argparse.ArgumentTypeError(
-                f'Must be in range [{min} .. {max}].')
+                f'Must be in range [{min} .. {max}].'
+            )
         return f
 
     return float_range_checker
 
 
-def positive(num_type: type):
+def positive(num_type: type) -> Callable[..., type]:
     """ Return function handle of an argument type function for
         ArgumentParser checking if number is of required type and
         if it is positive.\n
@@ -43,10 +46,12 @@ def positive(num_type: type):
         except ValueError:
             raise argparse.ArgumentTypeError(
                 f'Must be a{"n" if num_type.__name__ == "int" else ""} '
-                f'{num_type.__name__}.')
+                f'{num_type.__name__}.'
+            )
         if f < 0:
             raise argparse.ArgumentTypeError(
-                f'Must be positive {num_type.__name__}.')
+                f'Must be positive {num_type.__name__}.'
+            )
         return f
 
     return positive_checker
@@ -91,6 +96,8 @@ class Parser:
         __ants_params       -- Creates subparser for ants colony algorithm's
         parameters.\n
         __genetic_params    -- Creates subparser for genetic algorithm's
+        parameters.\n
+        __sea_params        -- Creates subparser for smallest edge algorithm's
         parameters.
     """
 
@@ -106,17 +113,23 @@ class Parser:
             formatter_class=lambda prog: CustomHelpFormatter(prog),
             add_help=False
         )
-        self.__p.add_argument('-h', '--help', action='help',
+        self.__p.add_argument('-h',
+                              '--help',
+                              action='help',
                               default=argparse.SUPPRESS,
-                              help='Show this help message and exit.')
-        self.__p.add_argument('path', metavar='', type=is_path,
-                              help='Path to database file.')
+                              help='Show this help message and exit.'
+                              )
+        self.__p.add_argument('path',
+                              type=is_path,
+                              help='Path to database file.'
+                              )
         # self.__p.add_argument('-c', '--cities', type=city_list, default='[]',
         #                       help='Specifies list of cities to '
         #                       'use during program runtime.')
         sub_p = self.__p.add_subparsers(title='algorithms',
                                         dest="algorithm",
-                                        help='Choice of algorithm.')
+                                        help='Choice of algorithm.'
+                                        )
         # Outside add_subparser to not cause problems with python 3.6.8
         sub_p.required = True
         self.__ants_params(sub_p)
@@ -130,23 +143,42 @@ class Parser:
             beta, rho.
         """
 
-        ants = sub_p.add_parser(
-            'ants', formatter_class=lambda prog: CustomHelpFormatter(prog),
-            add_help=False)
-        ants.add_argument('-h', '--help', action='help',
+        ants = sub_p.add_parser('ants',
+                                formatter_class=lambda prog:
+                                CustomHelpFormatter(prog),
+                                add_help=False
+                                )
+        ants.add_argument('-h',
+                          '--help',
+                          action='help',
                           default=argparse.SUPPRESS,
-                          help='Show this help message and exit.')
-        ants.add_argument('-t', '--tours', type=positive(int), default=40,
-                          help='Number of tours.')
-        ants.add_argument('-a', '--alpha', type=positive(float), default=1,
-                          help='Variable controling impact of '
-                          'pheromones between nodes.')
-        ants.add_argument('-b', '--beta', type=positive(float), default=2,
-                          help='Variable controling impact of '
-                          'distance between nodes.')
-        ants.add_argument('-p', '--rho', type=frange(0, 1), default=0.5,
-                          help='Variable controling pheromone '
-                          'evaporation.')
+                          help='Show this help message and exit.'
+                          )
+        ants.add_argument('-t',
+                          '--tours',
+                          type=positive(int),
+                          default=40,
+                          help='Number of tours.'
+                          )
+        ants.add_argument('-a',
+                          '--alpha',
+                          type=positive(float),
+                          default=1,
+                          help='Variable controling impact of pheromones '
+                          'between nodes.'
+                          )
+        ants.add_argument('-b',
+                          '--beta',
+                          type=positive(float),
+                          default=2,
+                          help='Variable controling impact of distance between'
+                          ' nodes.')
+        ants.add_argument('-p',
+                          '--rho',
+                          type=frange(0, 1),
+                          default=0.5,
+                          help='Variable controling pheromone evaporation.'
+                          )
 
     def __genetic_params(self, sub_p) -> None:
         """ Initialization of subparser for genetic algorithm with help flag
@@ -157,36 +189,81 @@ class Parser:
             of generations.
         """
 
-        genetic = sub_p.add_parser(
-            'genetic',
-            formatter_class=lambda prog: CustomHelpFormatter(
-                prog, max_help_position=30),
-            add_help=False)
-        genetic.add_argument('-h', '--help', action='help',
+        genetic = sub_p.add_parser('genetic',
+                                   formatter_class=lambda prog:
+                                   CustomHelpFormatter(
+                                       prog, max_help_position=30
+                                   ),
+                                   add_help=False
+                                   )
+        genetic.add_argument('-h',
+                             '--help',
+                             action='help',
                              default=argparse.SUPPRESS,
-                             help='Show this help message and exit.')
-        genetic.add_argument('-P', '--initial-population', type=int,
-                             default=250, help='Size of initial population.')
-        genetic.add_argument('-n', '--children-multiplier', type=float,
-                             default=0.8, help='Multiplier for children '
-                             'populaion size (P * n)')
-        genetic.add_argument('-p', '--mutation-probability', type=float,
-                             default=0.5, help='Mutation rate for offsprings.')
-        genetic.add_argument('-T', '--generation-count', type=int,
-                             default=500, metavar='\b',
-                             help='Number of generations.')
+                             help='Show this help message and exit.'
+                             )
+        genetic.add_argument('-P',
+                             '--initial-population',
+                             type=int,
+                             default=250,
+                             help='Size of initial population.'
+                             )
+        genetic.add_argument('-n',
+                             '--children-multiplier',
+                             type=float,
+                             default=0.8,
+                             help='Multiplier for children populaion size '
+                             '(P * n)'
+                             )
+        genetic.add_argument('-p',
+                             '--mutation-probability',
+                             type=float,
+                             default=0.5,
+                             help='Mutation rate for offsprings.'
+                             )
+        genetic.add_argument('-T',
+                             '--generation-count',
+                             type=int,
+                             default=500,
+                             help='Number of generations.'
+                             )
 
     def __sea_params(self, sub_p) -> None:
         """ Initialization of subparser for shortest edge algorithm with help
             flag. Takes _SubParsersAction as parameter.
         """
 
-        sea = sub_p.add_parser(
-            'sea', formatter_class=lambda prog: CustomHelpFormatter(prog),
-            add_help=False)
-        sea.add_argument('-h', '--help', action='help',
+        sea = sub_p.add_parser('sea',
+                               formatter_class=lambda prog:
+                               CustomHelpFormatter(prog),
+                               add_help=False)
+        sea.add_argument('-h',
+                         '--help',
+                         action='help',
                          default=argparse.SUPPRESS,
-                         help='Show this help message and exit.')
+                         help='Show this help message and exit.'
+                         )
+
+    def __pso_params(self, sub_p) -> None:
+        """ Initialization of subparser for genetic algorithm with help flag
+            and 4 optional parameters that have influence on the algorithm.
+            Takes _SubParsersAction as parameter. The parameters are: inital
+            population size, size of children population expressed as a
+            multiplier of initial population, probability of mutation, nuber
+            of generations.
+        """
+
+        pso = sub_p.add_parser('pso',
+                               formatter_class=lambda prog:
+                               CustomHelpFormatter(prog),
+                               add_help=False
+                               )
+        pso.add_argument('-h',
+                         '--help',
+                         action='help',
+                         default=argparse.SUPPRESS,
+                         help='Show this help message and exit.'
+                         )
 
     def parse(self) -> argparse.Namespace:
         """ Parses the arguments passed in command line and returns the
