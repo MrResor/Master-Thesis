@@ -1,5 +1,6 @@
 from __init__ import np, logging
 import time
+from collections import defaultdict
 
 
 class Genetic:
@@ -39,7 +40,7 @@ class Genetic:
 
         self.P, self.n, self.p, self.T = params.values()
 
-    def run(self, d, size) -> None:
+    def run(self, d: np.ndarray, size: int) -> None:
         """ Runs the algorithm. Takes distance matrix and number of nodes as
             parameters using the parameters set in __init__ performs a
             simulation of Ant Colony finding shortest path.
@@ -118,7 +119,7 @@ class Genetic:
         """ Performs mutation on children, calculates fitness of all children
             and then assigns P the fittest genomes into parents.
         """
-        
+
         # Mutation
         mutation = np.random.rand(self.mating_pool)
         mutation = np.where(mutation >= self.p)[0]
@@ -134,6 +135,7 @@ class Genetic:
                 child[:-1].astype('int32'),
                 np.roll(child[:-1], -1).astype('int32')
             ].sum()
+
         # Create new parents
         cross_gen = np.concatenate((self.parents, self.children), axis=0)
         cross_gen = cross_gen[cross_gen[:, -1].argsort()]
@@ -262,3 +264,39 @@ class Ant:
                 0:-1], -1).astype('int32')] += 1/ant[self.size]
             self.tau[ant[0:-1].astype('int32'), np.roll(ant[
                 0:-1], 1).astype('int32')] += 1/ant[self.size]
+
+
+class smallest_vertice_algorithm:
+    def __init__(self, params) -> None:
+        pass
+
+    def run(self, d: np.ndarray, size: int) -> None:
+
+        # transform distance matrix into list of vertices, with no duplicates.
+        ind = np.triu_indices(size, 1)
+        d = np.array([[i1, i2, i3]
+                      for i1, i2, i3 in zip(ind[0], ind[1], d[ind])])
+        start = time.perf_counter()
+        logging.info("Staring algorithm",
+                     extra={'runtime': time.perf_counter() - start})
+        d = d[d[:, -1].argsort()]
+        sol = 0
+        included = defaultdict(lambda: 0)
+        city_count = 0
+        for i, row in enumerate(d):
+            logging.info('Row %s / %s',
+                         str(i), str(d.shape[0]),
+                         extra={'runtime': time.perf_counter() - start})
+            c1, c2, dist = row
+            if included[c1] < 2 and included[c2] < 2:
+                sol += dist
+                city_count += 1
+                included[c1] += 1
+                included[c2] += 1
+            if city_count == size:
+                break
+        logging.info('Finished.',
+                     extra={'runtime': time.perf_counter() - start})
+        logging.info('Best Distance: %s',
+                     str(sol),
+                     extra={'runtime': 0})
