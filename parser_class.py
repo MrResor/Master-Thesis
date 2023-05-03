@@ -121,7 +121,7 @@ class Parser:
         sub_p.required = True
         self.__ants_params(sub_p)
         self.__genetic_params(sub_p)
-        self.__sva_params(sub_p)
+        self.__sea_params(sub_p)
 
     def __ants_params(self, sub_p) -> None:
         """ Initialization of subparser for ants algorithm with help flag and
@@ -176,17 +176,15 @@ class Parser:
                              default=500, metavar='\b',
                              help='Number of generations.')
 
-    def __sva_params(self, sub_p) -> None:
-        """ Initialization of subparser for ants algorithm with help flag and
-            4 optional parameters that have influence on the algorithm. Takes
-            _SubParsersAction as parameter. The parameters are: tours, alpha,
-            beta, rho.
+    def __sea_params(self, sub_p) -> None:
+        """ Initialization of subparser for shortest edge algorithm with help
+            flag. Takes _SubParsersAction as parameter.
         """
 
-        sva = sub_p.add_parser(
-            'sva', formatter_class=lambda prog: CustomHelpFormatter(prog),
+        sea = sub_p.add_parser(
+            'sea', formatter_class=lambda prog: CustomHelpFormatter(prog),
             add_help=False)
-        sva.add_argument('-h', '--help', action='help',
+        sea.add_argument('-h', '--help', action='help',
                          default=argparse.SUPPRESS,
                          help='Show this help message and exit.')
 
