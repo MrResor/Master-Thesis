@@ -72,6 +72,20 @@ def is_path(path: str) -> str:
     return path
 
 
+def sum_to_one(var: str) -> list:
+    try:
+        var = float(var)
+    except ValueError:
+        raise argparse.ArgumentTypeError('Must be a float value.')
+    sum_to_one.s += var
+    sum_to_one.c += 1
+    if sum_to_one.c == 3 and sum_to_one.s != 1:
+        raise argparse.ArgumentTypeError('Coefficients do not sum to 1.')
+    return var
+
+
+sum_to_one.s = 0
+sum_to_one.c = 0
 # def city_list(path: str):
 #     cities = []
 #     return cities
@@ -135,6 +149,7 @@ class Parser:
         self.__ants_params(sub_p)
         self.__genetic_params(sub_p)
         self.__sea_params(sub_p)
+        self.__pso_params(sub_p)
 
     def __ants_params(self, sub_p) -> None:
         """ Initialization of subparser for ants algorithm with help flag and
@@ -255,7 +270,7 @@ class Parser:
 
         pso = sub_p.add_parser('pso',
                                formatter_class=lambda prog:
-                               CustomHelpFormatter(prog),
+                               CustomHelpFormatter(prog, max_help_position=30),
                                add_help=False
                                )
         pso.add_argument('-h',
@@ -263,6 +278,28 @@ class Parser:
                          action='help',
                          default=argparse.SUPPRESS,
                          help='Show this help message and exit.'
+                         )
+        pso.add_argument('-c',
+                         '--coefficients',
+                         metavar='',
+                         nargs=3,
+                         type=sum_to_one,
+                         default=[0.9, 0.05, 0.05],
+                         help='Starting strenght of particle\'s own course.'
+                         )
+        pso.add_argument('-i',
+                         '--iterations',
+                         metavar='',
+                         type=positive(int),
+                         default=500,
+                         help='Max number of iterations.'
+                         )
+        pso.add_argument('-n',
+                         '--particles-number',
+                         metavar='',
+                         type=positive(int),
+                         default=20,
+                         help='Number of simulated particles.'
                          )
 
     def parse(self) -> argparse.Namespace:
