@@ -1,4 +1,4 @@
-from algorithms import Ant, Genetic, smallest_edge_algorithm
+from algorithms import Ant, Genetic, smallest_edge_algorithm, particle_swarm_optimisation
 from datetime import datetime
 from __init__ import argparse, logging, np
 from decorators import load_handler
@@ -35,7 +35,8 @@ class Console_App:
         logging.basicConfig(filename=curr_time + '.log',
                             level=logging.INFO,
                             format='[%(asctime)s] -> {%(levelname)s} '
-                            '(%(runtime)s) %(message)s')
+                            '(%(runtime)s) %(message)s'
+                            )
         self.load_data(args.path)
         self.setup_algorithm(args)
 
@@ -63,21 +64,28 @@ class Console_App:
             command line arguments.
         """
 
-        choice = {'ants': Ant, 'genetic': Genetic,
-                  'sea': smallest_edge_algorithm}
+        choice = {'ants': Ant,
+                  'genetic': Genetic,
+                  'sea': smallest_edge_algorithm,
+                  'pso': particle_swarm_optimisation
+                  }
         params_names = {'ants': ['tours', 'alpha', 'beta', 'rho'],
                         'genetic': ['initial_population',
                                     'children_multiplier',
                                     'mutation_probability',
                                     'generation_count'],
                         'sea': [],
+                        'pso': ['coefficients',
+                                'iterations',
+                                'particles_number']
                         }
         params = vars(args)
         params = {key: params[key] for key in params_names[args.algorithm]}
         logging.info('Setting up %s algorithm with following parameters:\n %s',
                      args.algorithm,
                      str(params).translate({ord(i): None for i in '{}'}),
-                     extra={'runtime': 0})
+                     extra={'runtime': 0}
+                     )
         self.algo = choice[args.algorithm](params)
 
     def run(self) -> None:
