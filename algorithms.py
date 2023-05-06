@@ -25,7 +25,8 @@ class Genetic:
 
         Methods:\n
         run                     -- Runs the prepaired algorithm with the
-        parameters set in __init__ and with the distance matrix passed.\n
+        parameters set in __init__ and with the distance matrix and
+        information about number of nodes passed.\n
         parents_and_best        -- Creates placeholders for parents and
         best solution.\n
         select_and_mate         -- Selects parents for mating and fills
@@ -36,8 +37,8 @@ class Genetic:
     """
 
     def __init__(self, params: dict) -> None:
-        """ Initialization of Genetic class, takes dict as parameter and assigns
-            values from it into corresponding variables.
+        """ Initialization of Genetic class, takes dict as parameter and
+            assigns values from it into corresponding variables.
         """
 
         self.P, self.n, self.p, self.T = params.values()
@@ -49,8 +50,10 @@ class Genetic:
         """
 
         start = perf_counter()
-        logging.info("Staring algorithm",
-                     extra={'runtime': perf_counter() - start})
+        logging.info(
+            "Staring algorithm",
+            extra={'runtime': perf_counter() - start}
+        )
         self.d = d
         self.size = size
         self.parents_and_best()
@@ -60,17 +63,23 @@ class Genetic:
         if self.mating_pool & 0x1:
             self.mating_pool -= 1
         for gen in range(self.T):
-            logging.info('Generation %s',
-                         str(gen),
-                         extra={'runtime': perf_counter() - start})
+            logging.info(
+                'Generation %s',
+                str(gen),
+                extra={'runtime': perf_counter() - start}
+            )
             self.select_and_mate()
             self.mutate_evaluate_cull()
 
-        logging.info('Finished.',
-                     extra={'runtime': perf_counter() - start})
-        logging.info('Best Distance: %s',
-                     str(self.best[-1]),
-                     extra={'runtime': 0})
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(self.best[-1]),
+            extra={'runtime': 0}
+        )
 
     def parents_and_best(self) -> None:
         """ Creates placeholders for the fittest genome and parents.
@@ -78,28 +87,28 @@ class Genetic:
 
         # Prepaire container for best and parents
         self.best = np.arange(self.size + 1, dtype='object')
-        self.best[-1:] = np.Inf
+        self.best[-1] = np.Inf
         self.parents = np.zeros((self.P, self.size + 1), dtype='object')
         for parent in self.parents:
-            parent[:-1] = np.random.permutation(self.size)
-            parent[-1] = self.d[
-                parent[:-1].astype('int32'),
-                np.roll(parent[:-1], -1).astype('int32')
-            ].sum()
+            tmp = np.random.permutation(self.size)
+            parent[:-1] = tmp
+            parent[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
 
     def select_and_mate(self) -> None:
         """ Based on the fitness of parents, they are chosen to mate, and the
-            mating is performed.
+            mating itself is performed.
         """
 
         # Selecting parents for mating and pair them together
         fitness = np.copy(self.parents[:, -1])
         probs = np.max(fitness) + 1 - fitness
         probs /= np.sum(probs)
-        mating = np.random.choice(np.arange(self.P),
-                                  self.mating_pool,
-                                  False,
-                                  probs.astype('float64').flatten())
+        mating = np.random.choice(
+            np.arange(self.P),
+            self.mating_pool,
+            False,
+            probs.astype('float64').flatten()
+        )
         mating = np.random.choice(mating, (int(self.mating_pool/2), 2), False)
         # Mating
         self.children = np.zeros((self.mating_pool, self.size + 1))
@@ -118,25 +127,22 @@ class Genetic:
             self.children[2*pair + 1, :-1] = child2
 
     def mutate_evaluate_cull(self) -> None:
-        """ Performs mutation on children, calculates fitness of all children
-            and then assigns P the fittest genomes into parents.
+        """ Performs mutation on children, calculates their fitness and then
+            assigns P of the fittest genomes into new parents.
         """
 
         # Mutation
         mutation = np.random.rand(self.mating_pool)
         mutation = np.where(mutation >= self.p)[0]
-        genes = np.random.choice(np.arange(self.size),
-                                 (mutation.shape[0], 2))
+        genes = np.random.choice(np.arange(self.size), (mutation.shape[0], 2))
         for m, (g1, g2) in zip(mutation, genes):
             child = self.children[m, :]
             child[g1], child[g2] = child[g2], child[g1]
 
         # Evaluate children
         for child in self.children:
-            child[-1] = self.d[
-                child[:-1].astype('int32'),
-                np.roll(child[:-1], -1).astype('int32')
-            ].sum()
+            tmp = child[:-1].astype('int32')
+            child[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
 
         # Create new parents
         cross_gen = np.concatenate((self.parents, self.children), axis=0)
