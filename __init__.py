@@ -1,4 +1,4 @@
 import argparse
 import logging
 import numpy as np
-import sqlite3
+from typing import Callable
