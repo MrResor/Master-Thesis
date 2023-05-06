@@ -1,6 +1,8 @@
-from __init__ import np, logging
-import time
+from __init__ import logging
+from time import perf_counter
 from collections import defaultdict
+
+from __init__ import np
 
 
 class Genetic:
@@ -46,9 +48,9 @@ class Genetic:
             simulation of survival of the fittest.
         """
 
-        start = time.perf_counter()
+        start = perf_counter()
         logging.info("Staring algorithm",
-                     extra={'runtime': time.perf_counter() - start})
+                     extra={'runtime': perf_counter() - start})
         self.d = d
         self.size = size
         self.parents_and_best()
@@ -60,12 +62,12 @@ class Genetic:
         for gen in range(self.T):
             logging.info('Generation %s',
                          str(gen),
-                         extra={'runtime': time.perf_counter() - start})
+                         extra={'runtime': perf_counter() - start})
             self.select_and_mate()
             self.mutate_evaluate_cull()
 
         logging.info('Finished.',
-                     extra={'runtime': time.perf_counter() - start})
+                     extra={'runtime': perf_counter() - start})
         logging.info('Best Distance: %s',
                      str(self.best[-1]),
                      extra={'runtime': 0})
@@ -190,16 +192,16 @@ class Ant:
             simulation of Ant Colony finding shortest path.
         """
 
-        start = time.perf_counter()
+        start = perf_counter()
         logging.info("Staring algorithm",
-                     extra={'runtime': time.perf_counter() - start})
+                     extra={'runtime': perf_counter() - start})
         self.d = d
         self.size = size
         best = self.ants_tables()
         for trip in range(self.tours):
             logging.info('Trip %s',
                          str(trip),
-                         extra={'runtime': time.perf_counter() - start})
+                         extra={'runtime': perf_counter() - start})
             self.ants_and_a()
             self.ants_traveling()
             index = np.argmin(self.ants[:, -1])
@@ -207,7 +209,7 @@ class Ant:
                 -1] else best
             self.pheromones()
         logging.info('Finished.',
-                     extra={'runtime': time.perf_counter() - start})
+                     extra={'runtime': perf_counter() - start})
         logging.info('Best Distance: %s',
                      str(best[-1]),
                      extra={'runtime': 0})
@@ -287,9 +289,9 @@ class smallest_edge_algorithm:
         ind = np.triu_indices(size, 1)
         d = np.array([[i1, i2, i3]
                       for i1, i2, i3 in zip(ind[0], ind[1], d[ind])])
-        start = time.perf_counter()
+        start = perf_counter()
         logging.info("Staring algorithm",
-                     extra={'runtime': time.perf_counter() - start})
+                     extra={'runtime': perf_counter() - start})
         d = d[d[:, -1].argsort()]
         sol = 0
         included = defaultdict(lambda: 0)
@@ -297,7 +299,7 @@ class smallest_edge_algorithm:
         for i, row in enumerate(d):
             logging.info('Row %s / %s',
                          str(i), str(d.shape[0]),
-                         extra={'runtime': time.perf_counter() - start})
+                         extra={'runtime': perf_counter() - start})
             c1, c2, dist = row
             if included[c1] < 2 and included[c2] < 2:
                 sol += dist
@@ -307,7 +309,7 @@ class smallest_edge_algorithm:
             if city_count == size:
                 break
         logging.info('Finished.',
-                     extra={'runtime': time.perf_counter() - start})
+                     extra={'runtime': perf_counter() - start})
         logging.info('Best Distance: %s',
                      str(sol),
                      extra={'runtime': 0})
