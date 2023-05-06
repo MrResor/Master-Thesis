@@ -34,12 +34,12 @@ class Console_App:
             passed to command line. Takes Namespace of arguments as parameter.
         """
 
-        curr_time = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
-        logging.basicConfig(filename=curr_time + '.log',
-                            level=logging.INFO,
-                            format='[%(asctime)s] -> {%(levelname)s} '
-                            '(%(runtime)s) %(message)s'
-                            )
+        logging.basicConfig(
+            filename=datetime.now().strftime('%d-%m-%Y_%H-%M-%S') + '.log',
+            level=logging.INFO,
+            format='[%(asctime)s] -> {%(levelname)s} '
+            '(%(runtime)s) %(message)s'
+        )
         self.load_data(args.path)
         self.setup_algorithm(args)
 
@@ -49,9 +49,11 @@ class Console_App:
             distances between nodes. Takes path to the file as parameter.
         """
 
-        logging.info('Loading data from: %s',
-                     path,
-                     extra={'runtime': 0})
+        logging.info(
+            'Loading data from: %s',
+            path,
+            extra={'runtime': 0}
+        )
         df = pd.read_csv(path)
         self.size = df[['from', 'to']].values.max()
         df[['dist']].values.max()  # check if the dist column exists
@@ -59,38 +61,43 @@ class Console_App:
         for t in df.values:
             self.d[int(t[0])-1, int(t[1])-1] = t[2]
         self.d += self.d.transpose()
-        logging.info('Data successfully loaded.',
-                     extra={'runtime': 0})
+        logging.info(
+            'Data successfully loaded.',
+            extra={'runtime': 0}
+        )
 
     def setup_algorithm(self, args: argparse.Namespace) -> None:
         """ Setups the algorithm for solving TSP problem based on the parsed
             command line arguments.
         """
 
-        choice = {'ants': algo.Ant,
-                  'genetic': algo.Genetic,
-                  'sea': algo.smallest_edge_algorithm,
-                  'pso': algo.particle_swarm_optimisation,
-                  '2-opt': algo.opt2
-                  }
-        params_names = {'ants': ['tours', 'alpha', 'beta', 'rho'],
-                        'genetic': ['initial_population',
-                                    'children_multiplier',
-                                    'mutation_probability',
-                                    'generation_count'],
-                        'sea': [],
-                        'pso': ['coefficients',
-                                'iterations',
-                                'particles_number'],
-                        '2-opt': [],
-                        }
+        choice = {
+            'ants': algo.Ant,
+            'genetic': algo.Genetic,
+            'sea': algo.smallest_edge_algorithm,
+            'pso': algo.particle_swarm_optimisation,
+            '2-opt': algo.opt2
+        }
+        params_names = {
+            'ants': ['tours', 'alpha', 'beta', 'rho'],
+            'genetic': ['initial_population',
+                        'children_multiplier',
+                        'mutation_probability',
+                        'generation_count'],
+            'sea': [],
+            'pso': ['coefficients',
+                    'iterations',
+                    'particles_number'],
+            '2-opt': [],
+        }
         params = vars(args)
         params = {key: params[key] for key in params_names[args.algorithm]}
-        logging.info('Setting up %s algorithm with following parameters:\n %s',
-                     args.algorithm,
-                     str(params).translate({ord(i): None for i in '{}'}),
-                     extra={'runtime': 0}
-                     )
+        logging.info(
+            'Setting up %s algorithm with following parameters:\n %s',
+            args.algorithm,
+            str(params).translate({ord(i): None for i in '{}'}),
+            extra={'runtime': 0}
+        )
         self.algo = choice[args.algorithm](params)
 
     def run(self) -> None:
