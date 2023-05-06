@@ -127,7 +127,13 @@ class Parser:
         __genetic_params    -- Creates subparser for genetic algorithm's
         parameters.\n
         __sea_params        -- Creates subparser for smallest edge algorithm's
-        parameters.
+        parameters.\n
+        __pso_params        -- Creates subparser for Particle Swarm
+        Optimisation algorithm's parameters.\n
+        __opt2_params       -- Creates subparser for 2-opt algorithm's
+        parameters.\n
+        parse               -- Parses the arguments collected from command
+        line.
     """
 
     def __init__(self) -> None:
