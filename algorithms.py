@@ -323,7 +323,8 @@ class smallest_edge_algorithm:
         for i, row in enumerate(d):
             logging.info(
                 'Row %s / %s',
-                str(i), str(d.shape[0]),
+                str(i),
+                str(d.shape[0]),
                 extra={'runtime': perf_counter() - start}
             )
             c1, c2, dist = row
@@ -442,10 +443,21 @@ class opt2:
             performs the algorithm.
         """
 
+        start = perf_counter()
+        logging.info(
+            "Staring algorithm",
+            extra={'runtime': perf_counter() - start}
+        )
         path = np.random.permutation(size)
         cur_len = d[path, np.roll(path, -1)].sum()
         improved = True
+        count = 0
         while (improved):
+            logging.info(
+                'Improvement attempt: %s',
+                str(count),
+                extra={'runtime': perf_counter() - start}
+            )
             improved = False
             for i in range(size - 2):
                 for j in range(i + 1, size - 1):
@@ -460,4 +472,13 @@ class opt2:
                         path[i+1:j+1] = path[i+1:j+1][::-1]
                         cur_len += diff
                         improved = True
-        print(cur_len)
+            count += 1
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(cur_len),
+            extra={'runtime': 0}
+        )
