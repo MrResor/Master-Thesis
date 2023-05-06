@@ -1,8 +1,11 @@
-from algorithms import Ant, Genetic, smallest_edge_algorithm, particle_swarm_optimisation
+from __init__ import argparse, logging
 from datetime import datetime
-from __init__ import argparse, logging, np
-from decorators import load_handler
+
+from __init__ import np
 import pandas as pd
+
+import algorithms as algo
+from decorators import load_handler
 
 
 class Console_App:
@@ -64,10 +67,11 @@ class Console_App:
             command line arguments.
         """
 
-        choice = {'ants': Ant,
-                  'genetic': Genetic,
-                  'sea': smallest_edge_algorithm,
-                  'pso': particle_swarm_optimisation
+        choice = {'ants': algo.Ant,
+                  'genetic': algo.Genetic,
+                  'sea': algo.smallest_edge_algorithm,
+                  'pso': algo.particle_swarm_optimisation,
+                  '2-opt': algo.opt2
                   }
         params_names = {'ants': ['tours', 'alpha', 'beta', 'rho'],
                         'genetic': ['initial_population',
@@ -77,7 +81,8 @@ class Console_App:
                         'sea': [],
                         'pso': ['coefficients',
                                 'iterations',
-                                'particles_number']
+                                'particles_number'],
+                        '2-opt': [],
                         }
         params = vars(args)
         params = {key: params[key] for key in params_names[args.algorithm]}
