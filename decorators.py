@@ -1,4 +1,4 @@
-from __init__ import logging, Callable
+from __init__ import Callable, logging
 
 
 def load_handler(func) -> Callable[..., None]:
