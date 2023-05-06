@@ -3,6 +3,7 @@
 pyvenv.cfg
 /etc
 /share
+/.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
