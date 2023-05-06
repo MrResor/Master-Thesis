@@ -1,5 +1,5 @@
-from parser_class import Parser
 from console_app import Console_App
+from parser_class import Parser
 
 
 if __name__ == '__main__':
