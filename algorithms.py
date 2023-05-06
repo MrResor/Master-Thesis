@@ -290,11 +290,15 @@ class smallest_edge_algorithm:
         simple, it consists of single function that performs the algorithm.\n
 
         Methods:\n
-        run             -- Runs the algorithm with the parameters with the
-        distance matrix passed.
+        run             -- Runs the algorithm with the distance matrix and
+        information about number of nodes passed.
     """
 
     def __init__(self, params) -> None:
+        """ Dummy, made only to make sure there are no errors when empty
+            params are passed.
+        """
+
         pass
 
     def run(self, d: np.ndarray, size: int) -> None:
@@ -304,19 +308,24 @@ class smallest_edge_algorithm:
 
         # transform distance matrix into list of vertices, with no duplicates.
         ind = np.triu_indices(size, 1)
-        d = np.array([[i1, i2, i3]
-                      for i1, i2, i3 in zip(ind[0], ind[1], d[ind])])
+        d = np.array(
+            [[i1, i2, i3] for i1, i2, i3 in zip(ind[0], ind[1], d[ind])]
+        )
         start = perf_counter()
-        logging.info("Staring algorithm",
-                     extra={'runtime': perf_counter() - start})
+        logging.info(
+            "Staring algorithm",
+            extra={'runtime': perf_counter() - start}
+        )
         d = d[d[:, -1].argsort()]
         sol = 0
         included = defaultdict(lambda: 0)
         city_count = 0
         for i, row in enumerate(d):
-            logging.info('Row %s / %s',
-                         str(i), str(d.shape[0]),
-                         extra={'runtime': perf_counter() - start})
+            logging.info(
+                'Row %s / %s',
+                str(i), str(d.shape[0]),
+                extra={'runtime': perf_counter() - start}
+            )
             c1, c2, dist = row
             if included[c1] < 2 and included[c2] < 2:
                 sol += dist
@@ -325,11 +334,15 @@ class smallest_edge_algorithm:
                 included[c2] += 1
             if city_count == size:
                 break
-        logging.info('Finished.',
-                     extra={'runtime': perf_counter() - start})
-        logging.info('Best Distance: %s',
-                     str(sol),
-                     extra={'runtime': 0})
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(sol),
+            extra={'runtime': 0}
+        )
 
 
 class particle_swarm_optimisation:
@@ -409,10 +422,26 @@ class particle_swarm_optimisation:
 
 
 class opt2:
+    """ Class of 2-Opt Algorithm. Because the method itself is so simple, it
+        consists of single function that performs the algorithm.\n
+
+        Methods:\n
+        run             -- Runs the algorithm with the distance matrix and
+        information about number of nodes passed.
+    """
+
     def __init__(self, params: dict) -> None:
+        """ Dummy, made only to make sure there are no errors when empty
+            params are passed.
+        """
+
         pass
 
     def run(self, d: np.ndarray, size: int) -> None:
+        """ Runs the algorithm. Takes distance matrix and number of nodes and
+            performs the algorithm.
+        """
+
         path = np.random.permutation(size)
         cur_len = d[path, np.roll(path, -1)].sum()
         improved = True
@@ -420,9 +449,13 @@ class opt2:
             improved = False
             for i in range(size - 2):
                 for j in range(i + 1, size - 1):
-                    diff = -d[path[[i, j]], path[[i + 1 % size, j + 1 % size]]
-                              ].sum() + d[path[[i, i + 1 % size]], path[[
-                                  j, j + 1 % size]]].sum()
+                    diff = -d[
+                        path[[i, j]],
+                        path[[i + 1 % size, j + 1 % size]]
+                    ].sum() + d[
+                        path[[i, i + 1 % size]],
+                        path[[j, j + 1 % size]]
+                    ].sum()
                     if diff < 0:
                         path[i+1:j+1] = path[i+1:j+1][::-1]
                         cur_len += diff
