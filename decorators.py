@@ -1,9 +1,8 @@
-from __init__ import logging
-from typing import Callable
+from __init__ import logging, Callable
 
 
 def load_handler(func) -> Callable[..., None]:
-    """ Decorator returning function for handling sqlite3 errors.
+    """ Decorator returning function for handling pandas errors.
     """
 
     def db_decorator(self, path) -> None:
