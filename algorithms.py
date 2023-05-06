@@ -202,9 +202,9 @@ class Ant:
                          extra={'runtime': time.perf_counter() - start})
             self.ants_and_a()
             self.ants_traveling()
-            index = np.argmin(self.ants[:, self.size])
-            best = self.ants[index] if best[self.size] > self.ants[index][
-                self.size] else best
+            index = np.argmin(self.ants[:, -1])
+            best = self.ants[index] if best[-1] > self.ants[index][
+                -1] else best
             self.pheromones()
         logging.info('Finished.',
                      extra={'runtime': time.perf_counter() - start})
@@ -282,6 +282,7 @@ class smallest_edge_algorithm:
         """ Runs the algorithm. Takes distance matrix and number of nodes and
             performs the algorithm.
         """
+
         # transform distance matrix into list of vertices, with no duplicates.
         ind = np.triu_indices(size, 1)
         d = np.array([[i1, i2, i3]
@@ -310,3 +311,101 @@ class smallest_edge_algorithm:
         logging.info('Best Distance: %s',
                      str(sol),
                      extra={'runtime': 0})
+
+
+class particle_swarm_optimisation:
+    def __init__(self, params: dict) -> None:
+        """ Initialization of PSO class, takes dict as parameter and assigns
+            values from it into corresponding variables.
+        """
+        coefs, self.i, self.n = params.values()
+        self.c1, self.c2, self.c3 = coefs
+
+    def run(self, d: np.ndarray, size: int) -> None:
+        self.d = d
+        self.size = size
+
+        # Prepaire container for best and parents
+        self.particles = np.zeros((self.n, self.size + 1, 2), dtype='object')
+        self.velocities = list(np.zeros((self.n, 1, 2)))
+        for i, particle in enumerate(self.particles):
+            tmp = np.random.permutation(self.size)
+            particle[:-1, :] = np.array(list(zip(tmp, np.roll(tmp, -1))))
+            particle[-1, 0] = self.d[tmp, np.roll(tmp, -1)].sum()
+            self.velocities[i] = [
+                list(particle[np.random.randint(self.size), :])]
+        self.pbest = self.particles.copy()
+        self.gbest = self.particles[np.argmin(
+            self.particles[:, -1, 0]), :].copy()
+
+        # self.velocities[0] = []
+        # self.velocities[0].append([123, 123])
+
+        for i in range(self.i):
+            # VELOCITY (??) i update (??)
+            Xgb = list({(p[0], p[1]): "" for p in
+                        self.gbest[:-1]}.keys())
+            for i, particle in enumerate(self.particles):
+                X0 = list({(p[0], p[1]): "" for p in particle[:-1]}.keys())
+                X0_set = list(map(set, X0))
+                Xpbest = list({(p[0], p[1]): "" for p in
+                               self.pbest[i, :-1]}.keys())
+                Xpbest = [(1, p[0], p[1])
+                          for p in Xpbest if set(p) not in X0_set]
+                Xgbest = [(1, p[0], p[1])
+                          for p in Xgb if set(p) not in X0_set]
+                V0 = [(1, p[0], p[1]) for p in self.velocities[i]]
+                # Create V1
+                V1 = []
+                deg = defaultdict(lambda: 0)
+                for X in Xgbest:
+                    if deg[X[1]] < 4 and deg[X[2]] < 4:
+                        V1.append(
+                            (self.c3 * np.random.rand() * X[0], X[1], X[2])
+                        )
+                        deg[X[1]] += 1
+                        deg[X[2]] += 1
+                for X in Xpbest:
+                    if deg[X[1]] < 4 and deg[X[2]] < 4:
+                        V1.append(
+                            (self.c2 * np.random.rand() * X[0], X[1], X[2])
+                        )
+                        deg[X[1]] += 1
+                        deg[X[2]] += 1
+                for X in V0:
+                    if deg[X[1]] < 4 and deg[X[2]] < 4:
+                        V1.append(
+                            (self.c1 * np.random.rand() * X[0], X[1], X[2])
+                        )
+                        deg[X[1]] += 1
+                        deg[X[2]] += 1
+                # create partial X1
+                X1 = []
+                # for V in V1:
+                #     if
+
+            self.c1 *= 0.95
+            self.c2 *= 1.01
+            self.c3 = 1 - self.c1 - self.c2
+
+
+class opt2:
+    def __init__(self, params: dict) -> None:
+        pass
+
+    def run(self, d: np.ndarray, size: int) -> None:
+        path = np.random.permutation(size)
+        cur_len = d[path, np.roll(path, -1)].sum()
+        improved = True
+        while (improved):
+            improved = False
+            for i in range(size - 2):
+                for j in range(i + 1, size - 1):
+                    diff = -d[path[[i, j]], path[[i + 1 % size, j + 1 % size]]
+                              ].sum() + d[path[[i, i + 1 % size]], path[[
+                                  j, j + 1 % size]]].sum()
+                    if diff < 0:
+                        path[i+1:j+1] = path[i+1:j+1][::-1]
+                        cur_len += diff
+                        improved = True
+        print(cur_len)
