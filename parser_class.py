@@ -145,7 +145,10 @@ class Parser:
         self.__p = argparse.ArgumentParser(
             prog='TSP solver',
             description='Program for solving of TSP using different methods.',
-            formatter_class=lambda prog: CustomHelpFormatter(prog),
+            formatter_class=lambda prog: CustomHelpFormatter(
+                prog,
+                max_help_position=35
+            ),
             add_help=False
         )
         self.__p.add_argument(
