@@ -75,7 +75,6 @@ class Console_App:
             'ants': algo.Ant,
             'genetic': algo.Genetic,
             'sea': algo.smallest_edge_algorithm,
-            'pso': algo.particle_swarm_optimisation,
             '2-opt': algo.opt2
         }
         params_names = {
@@ -85,9 +84,6 @@ class Console_App:
                         'mutation_probability',
                         'generation_count'],
             'sea': [],
-            'pso': ['coefficients',
-                    'iterations',
-                    'particles_number'],
             '2-opt': [],
         }
         params = vars(args)

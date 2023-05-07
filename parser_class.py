@@ -72,28 +72,6 @@ def is_path(path: str) -> str:
     return path
 
 
-def sum_to_one(var: str) -> list:
-    """ New Type function for argparse - Checks all nargs passed to see if
-        they are of type float, and then if they sum to 1.\n
-        var - one of the nargs passed, processed one by one.
-    """
-
-    try:
-        var = float(var)
-    except ValueError:
-        raise argparse.ArgumentTypeError('Must be a float value.')
-    sum_to_one.s += var
-    sum_to_one.c += 1
-    if sum_to_one.c == 3 and sum_to_one.s != 1:
-        raise argparse.ArgumentTypeError('Coefficients do not sum to 1.')
-    return var
-
-
-# Declared static variables for sum_to_one
-sum_to_one.s = 0
-sum_to_one.c = 0
-
-
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     """ Class of custom formatter that overwrites function that prints --help
         to remove display of metavars.\n
@@ -171,7 +149,6 @@ class Parser:
         self.__ants_params(sub_p)
         self.__genetic_params(sub_p)
         self.__sea_params(sub_p)
-        self.__pso_params(sub_p)
         self.__opt2_params(sub_p)
 
     def __ants_params(self, sub_p) -> None:
@@ -300,56 +277,6 @@ class Parser:
             action='help',
             default=argparse.SUPPRESS,
             help='Show this help message and exit.'
-        )
-
-    def __pso_params(self, sub_p) -> None:
-        """ Initialization of subparser for Particle Swarm Optimisation with
-            help flag and 4 optional parameters that have influence on the
-            algorithm. Takes _SubParsersAction as parameter. The parameters
-            are: list of coeficients describing influence of different parts
-            on the solution, number of iterations to be performed by algorithm,
-            number of simulated particles.
-        """
-
-        pso = sub_p.add_parser(
-            'pso',
-            formatter_class=lambda prog: CustomHelpFormatter(
-                prog, max_help_position=30
-            ),
-            add_help=False
-        )
-        pso.add_argument(
-            '-h',
-            '--help',
-            action='help',
-            default=argparse.SUPPRESS,
-            help='Show this help message and exit.'
-        )
-        pso.add_argument(
-            '-c',
-            '--coefficients',
-            default=[0.9, 0.05, 0.05],
-            help='Starting weights of particle\'s velocity, best value found '
-            'by particle and global best.',
-            metavar='\b',
-            nargs=3,
-            type=sum_to_one,
-        )
-        pso.add_argument(
-            '-i',
-            '--iterations',
-            default=500,
-            help='Max number of iterations.',
-            metavar='',
-            type=positive(int),
-        )
-        pso.add_argument(
-            '-n',
-            '--particles-number',
-            default=20,
-            help='Number of simulated particles.',
-            metavar='',
-            type=positive(int)
         )
 
     def __opt2_params(self, sub_p) -> None:
