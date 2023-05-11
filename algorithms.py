@@ -80,6 +80,11 @@ class Genetic:
             str(self.best[-1]),
             extra={'runtime': 0}
         )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(int(v)) for v in self.best[:-1]]),
+            extra={'runtime': 0}
+        )
 
     def parents_and_best(self) -> None:
         """ Creates placeholders for the fittest genome and parents.
@@ -224,6 +229,11 @@ class Ant:
         logging.info(
             'Best Distance: %s',
             str(best[-1]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best path:\n%s',
+            '->'.join([str(v) for v in best[:-1]]),
             extra={'runtime': 0}
         )
 
@@ -480,5 +490,10 @@ class opt2:
         logging.info(
             'Best Distance: %s',
             str(cur_len),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
