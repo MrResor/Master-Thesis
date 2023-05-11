@@ -315,21 +315,21 @@ class smallest_edge_algorithm:
         """ Runs the algorithm. Takes distance matrix and number of nodes and
             performs the algorithm.
         """
-
+        init_d = d
         # transform distance matrix into list of vertices, with no duplicates.
         ind = np.triu_indices(size, 1)
-        d = np.array(
-            [[i1, i2, i3] for i1, i2, i3 in zip(ind[0], ind[1], d[ind])]
-        )
+        d = np.array([i for i in zip(ind[0], ind[1], d[ind])] +\
+                     [i for i in zip(ind[1], ind[0], d[ind])], dtype='object')
         start = perf_counter()
         logging.info(
             "Staring algorithm",
             extra={'runtime': perf_counter() - start}
         )
-        d = d[d[:, -1].argsort()]
-        sol = 0
-        included = defaultdict(lambda: 0)
-        city_count = 0
+        d = d[d[:, -1].argsort(), :]
+        added = []
+        count = defaultdict(lambda: 0)
+        free = defaultdict(lambda: True)
+        edge = 0
         for i, row in enumerate(d):
             logging.info(
                 'Row %s / %s',
@@ -337,14 +337,27 @@ class smallest_edge_algorithm:
                 str(d.shape[0]),
                 extra={'runtime': perf_counter() - start}
             )
-            c1, c2, dist = row
-            if included[c1] < 2 and included[c2] < 2:
-                sol += dist
-                city_count += 1
-                included[c1] += 1
-                included[c2] += 1
-            if city_count == size:
-                break
+            c1, c2, _ = row
+            if count[c1] < 2 and count[c2] < 2 and free[(1, c1)] and free[(2, c2)]:
+                new_path = added.copy()
+                new_path.append((c1, c2))
+                if not self.check_cycle(new_path) or edge == (size - 1):
+                    added.append((c1, c2))
+                    edge += 1
+                    count[c1] += 1
+                    count[c2] += 1
+                    free[(1, c1)] = False
+                    free[(2, c2)] = False
+
+        path = np.zeros((size, 2))
+        path[0] = added[0]
+        for i, p in enumerate(path[:-1]):
+            for a in added:
+                if p[1] == a[0]:
+                    path[i+1] = a
+                    break
+        path = np.array(path[:, 0]).astype('int32')
+        sol = init_d[path, np.roll(path, 1)].sum()
         logging.info(
             'Finished.',
             extra={'runtime': perf_counter() - start}
@@ -354,6 +367,31 @@ class smallest_edge_algorithm:
             str(sol),
             extra={'runtime': 0}
         )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in path]),
+            extra={'runtime': 0}
+        )
+
+    def check_cycle(self, path) -> bool:
+        cycle = False
+        while path:
+            visited = []
+            p0 = path[0]
+            while p0 not in visited:
+                if len(visited) == len(path):
+                    break
+                visited.append(p0)
+                for p1 in path:
+                    if p0[1] == p1[0]:
+                        p0 = p1
+                        break
+            if visited[0][0] == visited[-1][1]:
+                cycle = True
+            for v in visited:
+                path.remove(v)
+                
+        return cycle
 
 
 class particle_swarm_optimisation:
