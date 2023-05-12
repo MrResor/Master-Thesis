@@ -96,7 +96,7 @@ class Genetic:
         self.parents = np.zeros((self.P, self.size + 1), dtype='object')
         for parent in self.parents:
             tmp = np.random.permutation(self.size)
-            parent[:-1] = tmp
+            parent[:-1] = tmp.copy()
             parent[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
 
     def select_and_mate(self) -> None:
@@ -105,31 +105,25 @@ class Genetic:
         """
 
         # Selecting parents for mating and pair them together
-        fitness = np.copy(self.parents[:, -1])
-        probs = np.max(fitness) + 1 - fitness
+        fitness = self.parents[:, -1].copy()
+        probs = (np.max(fitness) + 1 - fitness).astype('float64')
         probs /= np.sum(probs)
         mating = np.random.choice(
             np.arange(self.P),
             self.mating_pool,
             False,
-            probs.astype('float64').flatten()
+            probs.flatten()
         )
         mating = np.random.choice(mating, (int(self.mating_pool/2), 2), False)
         # Mating
         self.children = np.zeros((self.mating_pool, self.size + 1))
         for pair, (p1, p2) in enumerate(mating):
-            child1 = np.copy(self.parents[p2, :-1])
-            child2 = np.copy(self.parents[p1, :-1])
+            par1 = self.parents[p1, :-1]
+            par2 = self.parents[p2, :-1]
+            cut1 = np.random.randint(self.size)
+            cut2 = np.random.randint(cut1, self.size + 1)
+            
 
-            gene = 0
-            child1[gene], child2[gene] = child2[gene], child1[gene]
-            while child1.shape != np.unique(child1).shape:
-                res = np.where(child1 == child1[gene])[0]
-                gene = res[np.where(res != gene)[0][0]]
-                child1[gene], child2[gene] = child2[gene], child1[gene]
-
-            self.children[2*pair, :-1] = child1
-            self.children[2*pair + 1, :-1] = child2
 
     def mutate_evaluate_cull(self) -> None:
         """ Performs mutation on children, calculates their fitness and then
@@ -403,71 +397,56 @@ class particle_swarm_optimisation:
         self.c1, self.c2, self.c3 = coefs
 
     def run(self, d: np.ndarray, size: int) -> None:
+        self.c1_init = 1
+        self.c2 = 2
+        self.c3 = 2
         self.d = d
         self.size = size
 
         # Prepaire container for best and parents
-        self.particles = np.zeros((self.n, self.size + 1, 2), dtype='object')
-        self.velocities = list(np.zeros((self.n, 1, 2)))
+        self.particles = np.zeros((self.n, self.size + 1), dtype='object')
+        # self.velocities = list(np.zeros((self.n, 1, 2)))
         for i, particle in enumerate(self.particles):
             tmp = np.random.permutation(self.size)
-            particle[:-1, :] = np.array(list(zip(tmp, np.roll(tmp, -1))))
-            particle[-1, 0] = self.d[tmp, np.roll(tmp, -1)].sum()
-            self.velocities[i] = [
-                list(particle[np.random.randint(self.size), :])]
+            particle[:-1] = tmp.copy()
+            particle[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
         self.pbest = self.particles.copy()
-        self.gbest = self.particles[np.argmin(
-            self.particles[:, -1, 0]), :].copy()
-
-        # self.velocities[0] = []
-        # self.velocities[0].append([123, 123])
+        self.gbest = self.particles[np.argmin(self.particles[:, -1]), :].copy()
+        self.velocities = np.zeros((self.n, self.size))
 
         for i in range(self.i):
-            # VELOCITY (??) i update (??)
-            Xgb = list({(p[0], p[1]): "" for p in
-                        self.gbest[:-1]}.keys())
-            for i, particle in enumerate(self.particles):
-                X0 = list({(p[0], p[1]): "" for p in particle[:-1]}.keys())
-                X0_set = list(map(set, X0))
-                Xpbest = list({(p[0], p[1]): "" for p in
-                               self.pbest[i, :-1]}.keys())
-                Xpbest = [(1, p[0], p[1])
-                          for p in Xpbest if set(p) not in X0_set]
-                Xgbest = [(1, p[0], p[1])
-                          for p in Xgb if set(p) not in X0_set]
-                V0 = [(1, p[0], p[1]) for p in self.velocities[i]]
-                # Create V1
-                V1 = []
-                deg = defaultdict(lambda: 0)
-                for X in Xgbest:
-                    if deg[X[1]] < 4 and deg[X[2]] < 4:
-                        V1.append(
-                            (self.c3 * np.random.rand() * X[0], X[1], X[2])
-                        )
-                        deg[X[1]] += 1
-                        deg[X[2]] += 1
-                for X in Xpbest:
-                    if deg[X[1]] < 4 and deg[X[2]] < 4:
-                        V1.append(
-                            (self.c2 * np.random.rand() * X[0], X[1], X[2])
-                        )
-                        deg[X[1]] += 1
-                        deg[X[2]] += 1
-                for X in V0:
-                    if deg[X[1]] < 4 and deg[X[2]] < 4:
-                        V1.append(
-                            (self.c1 * np.random.rand() * X[0], X[1], X[2])
-                        )
-                        deg[X[1]] += 1
-                        deg[X[2]] += 1
-                # create partial X1
-                X1 = []
-                # for V in V1:
-                #     if
-
-            self.c1 *= 0.95
-            self.c2 *= 1.01
-            self.c3 = 1 - self.c1 - self.c2
+            self.c1 = self.c1_init - i / (2 * self.i)
+            for particle, pbest, V in zip(self.particles, self.pbest, self.velocities):
+                p = particle[:-1].astype('int32')
+                y = np.array([1 - 2 * (np.random.rand() < 0.5) if x == pb and x == gb
+                    else int(x == gb) - int(x == pb) for (x, pb, gb) in zip(p, pbest, self.gbest)])
+                r1, r2 = np.random.rand(2)
+                V1 = self.c1 * V + r1 *self.c2 * (- 1 - y) + r2 * self.c3 * (1 - y)
+                lam = V1 + y
+                alpha = 0.35
+                y = [int(v > alpha) - int(v < -alpha) for v in lam]
+                new_p = np.full_like(p, self.size + 1, dtype='int32')
+                for j, v in enumerate(y):
+                    flag = True
+                    if v != 0:
+                        r = pbest[j] if v == -1 else self.gbest[j]
+                        if (r not in new_p):
+                            new_p[j] = r
+                            flag = False
+                    if flag:
+                        r = np.random.randint(self.size)
+                        while (r in new_p):
+                            r = np.random.randint(self.size)
+                        new_p[j] = r
+                p[:] = new_p.copy()
+                particle[-1] = self.d[p, np.roll(p, -1)].sum()
+                if particle[-1] < pbest[-1]:
+                    pbest = particle.copy()
+            candidate = self.particles[np.argmin(self.particles[-1]), :]
+            if candidate[-1] < self.gbest[-1]:
+                self.gbest = candidate.copy()
+        print(self.gbest)
+                
 
 
 class opt2:
