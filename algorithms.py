@@ -89,7 +89,7 @@ class Genetic:
             parent[:-1] = tmp.copy()
             parent[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
 
-    def select(self) -> None:
+    def select(self) -> np.ndarray:
         """ Based on the fitness of parents, they are chosen to mate.
         """
 
@@ -105,7 +105,7 @@ class Genetic:
         )
         return np.random.choice(mating, (int(self.mating_pool/2), 2), False)
 
-    def mate(self, mating) -> None:
+    def mate(self, mating: np.ndarray) -> None:
         """ Performs mating using chosen parents.
         """
 
@@ -160,7 +160,7 @@ class Genetic:
         self.best = self.parents[0, :].copy() if self.best[
             -1] > self.parents[0, -1] else self.best
 
-    def finish(self, start) -> None:
+    def finish(self, start: float) -> None:
         """ Finish up function logging information about path and it's lenght.
         """
 
@@ -209,7 +209,8 @@ class Ant:
         ants_and_a      -- Creates ants, a and start for each tour.\n
         ants_traveling  -- Simulates the traveling process of ants along with
         decision making.\n
-        pheromones      -- Simulates the evaporation of pheromone in tau.
+        pheromones      -- Simulates the evaporation of pheromone in tau.\n
+        finish          -- Puts final information to the logfile.
     """
 
     def __init__(self, params: dict) -> None:
@@ -245,20 +246,7 @@ class Ant:
             best = self.ants[index] if best[-1] > self.ants[index][
                 -1] else best
             self.pheromones()
-        logging.info(
-            'Finished.',
-            extra={'runtime': perf_counter() - start}
-        )
-        logging.info(
-            'Best Distance: %s',
-            str(best[-1]),
-            extra={'runtime': 0}
-        )
-        logging.info(
-            'Best path:\n%s',
-            '->'.join([str(v) for v in best[:-1]]),
-            extra={'runtime': 0}
-        )
+        self.finish(start, best)
 
     def ants_tables(self) -> np.ndarray:
         """ Creates necessary tables for the algorithm to run. These tables
@@ -316,6 +304,25 @@ class Ant:
             a = ant[0: -1].astype('int32')
             self.tau[a, np.roll(a, -1)] += 1/ant[-1]
             self.tau[a, np.roll(a, 1)] += 1/ant[-1]
+
+    def finish(self, start: float, best: np.ndarray) -> None:
+        """ Finish up function logging information about path and it's lenght.
+        """
+
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(best[-1]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best path:\n%s',
+            '->'.join([str(v) for v in best[:-1]]),
+            extra={'runtime': 0}
+        )
 
 
 class smallest_edge_algorithm:
@@ -377,8 +384,9 @@ class smallest_edge_algorithm:
 
     def setup(self, d) -> None:
         ind = np.triu_indices(self.size, 1)
-        self.d = np.array([i for i in zip(ind[0], ind[1], d[ind])] +\
-                     [i for i in zip(ind[1], ind[0], d[ind])], dtype='object')
+        self.d = np.array([i for i in zip(ind[0], ind[1], d[ind])] +
+                          [i for i in zip(ind[1], ind[0], d[ind])],
+                          dtype='object')
         self.added = []
         self.count = defaultdict(lambda: 0)
         self.free = defaultdict(lambda: True)
@@ -386,7 +394,10 @@ class smallest_edge_algorithm:
 
     def add(self, row) -> None:
         c1, c2, _ = row
-        if self.count[c1] < 2 and self.count[c2] < 2 and self.free[(1, c1)] and self.free[(2, c2)]:
+        if (self.count[c1] < 2 and
+                self.count[c2] < 2 and
+                self.free[(1, c1)] and
+                self.free[(2, c2)]):
             new_path = self.added.copy()
             new_path.append((c1, c2))
             if not self.check_cycle(new_path) or self.edge == (self.size - 1):
@@ -414,9 +425,8 @@ class smallest_edge_algorithm:
                 cycle = True
             for v in visited:
                 path.remove(v)
-                
         return cycle
- 
+
     def get_path_from_edges(self):
         path = np.zeros((self.size, 2))
         path[0] = self.added[0]
