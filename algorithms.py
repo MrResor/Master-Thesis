@@ -29,11 +29,13 @@ class Genetic:
         information about number of nodes passed.\n
         parents_and_best        -- Creates placeholders for parents and
         best solution.\n
-        select_and_mate         -- Selects parents for mating and fills
-        children table with newly created ones.\n
+        select                  -- Selects parents for mating.\n
+        mate                    -- Fills children table with newly created
+        ones.\n
         mutate_evaluate_cull    -- Mutates the children, then evaluates their
         fitness and lastly takes old parents and children together and chooses
-        P best ones to go to next generation.
+        P best ones to go to next generation.\n
+        finish                  -- Puts final information to the logfile.
     """
 
     def __init__(self, params: dict) -> None:
@@ -68,23 +70,11 @@ class Genetic:
                 str(gen),
                 extra={'runtime': perf_counter() - start}
             )
-            self.select_and_mate()
+            selected = self.select()
+            self.mate(selected)
             self.mutate_evaluate_cull()
 
-        logging.info(
-            'Finished.',
-            extra={'runtime': perf_counter() - start}
-        )
-        logging.info(
-            'Best Distance: %s',
-            str(self.best[-1]),
-            extra={'runtime': 0}
-        )
-        logging.info(
-            'Best Path:\n%s',
-            '->'.join([str(int(v)) for v in self.best[:-1]]),
-            extra={'runtime': 0}
-        )
+        self.finish(start)
 
     def parents_and_best(self) -> None:
         """ Creates placeholders for the fittest genome and parents.
@@ -99,9 +89,8 @@ class Genetic:
             parent[:-1] = tmp.copy()
             parent[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
 
-    def select_and_mate(self) -> None:
-        """ Based on the fitness of parents, they are chosen to mate, and the
-            mating itself is performed.
+    def select(self) -> None:
+        """ Based on the fitness of parents, they are chosen to mate.
         """
 
         # Selecting parents for mating and pair them together
@@ -114,16 +103,37 @@ class Genetic:
             False,
             probs.flatten()
         )
-        mating = np.random.choice(mating, (int(self.mating_pool/2), 2), False)
-        # Mating
+        return np.random.choice(mating, (int(self.mating_pool/2), 2), False)
+
+    def mate(self, mating) -> None:
+        """ Performs mating using chosen parents.
+        """
+
         self.children = np.zeros((self.mating_pool, self.size + 1))
         for pair, (p1, p2) in enumerate(mating):
             par1 = self.parents[p1, :-1]
             par2 = self.parents[p2, :-1]
             cut1 = np.random.randint(self.size)
             cut2 = np.random.randint(cut1, self.size + 1)
-            
+            child1 = np.full_like(par1, self.size + 1)
+            child2 = np.full_like(par2, self.size + 1)
 
+            child1[cut1:cut2] = par2[cut1:cut2].copy()
+            child2[cut1:cut2] = par1[cut1:cut2].copy()
+
+            for i in range(self.size):
+                if i < cut1 or i >= cut2:
+                    v1 = par1[i]
+                    v2 = par2[i]
+                    while (v1 in child1):
+                        v1 = par1[np.where(child1 == v1)][0]
+                    while (v2 in child2):
+                        v2 = par2[np.where(child2 == v2)][0]
+                    child1[i] = v1
+                    child2[i] = v2
+
+            self.children[2*pair, :-1] = child1.copy()
+            self.children[2*pair + 1, :-1] = child2.copy()
 
     def mutate_evaluate_cull(self) -> None:
         """ Performs mutation on children, calculates their fitness and then
@@ -146,9 +156,28 @@ class Genetic:
         # Create new parents
         cross_gen = np.concatenate((self.parents, self.children), axis=0)
         cross_gen = cross_gen[cross_gen[:, -1].argsort()]
-        self.parents = cross_gen[:self.P, :]
-        self.best = self.parents[0, :] if self.best[-1] > self.parents[
-            0, -1] else self.best
+        self.parents = cross_gen[:self.P, :].copy()
+        self.best = self.parents[0, :].copy() if self.best[
+            -1] > self.parents[0, -1] else self.best
+
+    def finish(self, start) -> None:
+        """ Finish up function logging information about path and it's lenght.
+        """
+
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(self.best[-1]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(int(v)) for v in self.best[:-1]]),
+            extra={'runtime': 0}
+        )
 
 
 class Ant:
@@ -309,49 +338,28 @@ class smallest_edge_algorithm:
         """ Runs the algorithm. Takes distance matrix and number of nodes and
             performs the algorithm.
         """
-        init_d = d
-        # transform distance matrix into list of vertices, with no duplicates.
-        ind = np.triu_indices(size, 1)
-        d = np.array([i for i in zip(ind[0], ind[1], d[ind])] +\
-                     [i for i in zip(ind[1], ind[0], d[ind])], dtype='object')
+        self.init_d = d
+        self.size = size
+
+        self.setup(d)
+        
         start = perf_counter()
         logging.info(
             "Staring algorithm",
             extra={'runtime': perf_counter() - start}
         )
-        d = d[d[:, -1].argsort(), :]
-        added = []
-        count = defaultdict(lambda: 0)
-        free = defaultdict(lambda: True)
-        edge = 0
-        for i, row in enumerate(d):
+        self.d = self.d[self.d[:, -1].argsort(), :]
+        for i, row in enumerate(self.d):
             logging.info(
                 'Row %s / %s',
                 str(i),
-                str(d.shape[0]),
+                str(self.d.shape[0]),
                 extra={'runtime': perf_counter() - start}
             )
-            c1, c2, _ = row
-            if count[c1] < 2 and count[c2] < 2 and free[(1, c1)] and free[(2, c2)]:
-                new_path = added.copy()
-                new_path.append((c1, c2))
-                if not self.check_cycle(new_path) or edge == (size - 1):
-                    added.append((c1, c2))
-                    edge += 1
-                    count[c1] += 1
-                    count[c2] += 1
-                    free[(1, c1)] = False
-                    free[(2, c2)] = False
+            self.add(row)
 
-        path = np.zeros((size, 2))
-        path[0] = added[0]
-        for i, p in enumerate(path[:-1]):
-            for a in added:
-                if p[1] == a[0]:
-                    path[i+1] = a
-                    break
-        path = np.array(path[:, 0]).astype('int32')
-        sol = init_d[path, np.roll(path, 1)].sum()
+        path, sol = self.get_path_from_edges()
+
         logging.info(
             'Finished.',
             extra={'runtime': perf_counter() - start}
@@ -366,6 +374,28 @@ class smallest_edge_algorithm:
             '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
+
+    def setup(self, d) -> None:
+        ind = np.triu_indices(self.size, 1)
+        self.d = np.array([i for i in zip(ind[0], ind[1], d[ind])] +\
+                     [i for i in zip(ind[1], ind[0], d[ind])], dtype='object')
+        self.added = []
+        self.count = defaultdict(lambda: 0)
+        self.free = defaultdict(lambda: True)
+        self.edge = 0
+
+    def add(self, row) -> None:
+        c1, c2, _ = row
+        if self.count[c1] < 2 and self.count[c2] < 2 and self.free[(1, c1)] and self.free[(2, c2)]:
+            new_path = self.added.copy()
+            new_path.append((c1, c2))
+            if not self.check_cycle(new_path) or self.edge == (self.size - 1):
+                self.added.append((c1, c2))
+                self.edge += 1
+                self.count[c1] += 1
+                self.count[c2] += 1
+                self.free[(1, c1)] = False
+                self.free[(2, c2)] = False
 
     def check_cycle(self, path) -> bool:
         cycle = False
@@ -386,7 +416,18 @@ class smallest_edge_algorithm:
                 path.remove(v)
                 
         return cycle
-
+ 
+    def get_path_from_edges(self):
+        path = np.zeros((self.size, 2))
+        path[0] = self.added[0]
+        for i, p in enumerate(path[:-1]):
+            for a in self.added:
+                if p[1] == a[0]:
+                    path[i+1] = a
+                    break
+        path = np.array(path[:, 0]).astype('int32')
+        sol = self.init_d[path, np.roll(path, 1)].sum()
+        return path, sol
 
 class particle_swarm_optimisation:
     def __init__(self, params: dict) -> None:
