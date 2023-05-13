@@ -90,7 +90,8 @@ class Genetic:
             parent[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
 
     def select(self) -> np.ndarray:
-        """ Based on the fitness of parents, they are chosen to mate.
+        """ Based on the fitness of parents, they are chosen to mate, returns
+            them in the form of np.ndarray.
         """
 
         # Selecting parents for mating and pair them together
@@ -106,7 +107,8 @@ class Genetic:
         return np.random.choice(mating, (int(self.mating_pool/2), 2), False)
 
     def mate(self, mating: np.ndarray) -> None:
-        """ Performs mating using chosen parents.
+        """ Performs mating using chosen parents received in form of
+            np.ndarray as parameter.
         """
 
         self.children = np.zeros((self.mating_pool, self.size + 1))
@@ -162,6 +164,7 @@ class Genetic:
 
     def finish(self, start: float) -> None:
         """ Finish up function logging information about path and it's lenght.
+            Receives time when program was started as a float.
         """
 
         logging.info(
@@ -250,7 +253,7 @@ class Ant:
 
     def ants_tables(self) -> np.ndarray:
         """ Creates necessary tables for the algorithm to run. These tables
-            need to be created just once.
+            need to be created just once. Returnes np.ndarray
         """
 
         self.tau = np.full((self.size, self.size), 1/self.d.max())
@@ -329,12 +332,28 @@ class smallest_edge_algorithm:
     """ Class of Smallest Edge Algorithm. Because the method itself is so
         simple, it consists of single function that performs the algorithm.\n
 
+        Attributes:\n
+        init_d      -- Distance between nodes.\n
+        size        -- Number of nodes.\n
+        d           -- List of edges in descending order of length.\n
+        added       -- Holds in edges in order in which they were added.\n
+        count       -- Counts number of times each vertex is present in current
+        solution.\n
+        free        -- Ensures that vertex cannot be used twice on the same
+        position in edges in current solution.\n
+        edge        -- Number of edges in current solution.\n
+
         Methods:\n
-        run             -- Runs the algorithm with the distance matrix and
-        information about number of nodes passed.
+        run         -- Runs the algorithm with the distance matrix and
+        information about number of nodes passed.\n
+        setup       -- Prepaires variables for the algorithm.\n
+        add         -- Checks if edge is elligible to be added to the solution.
+        \n
+        check_cycle -- Checks if in the given path a cycle is present.\n
+        finish      -- Puts final information to the logfile.
     """
 
-    def __init__(self, params) -> None:
+    def __init__(self, params: dict) -> None:
         """ Dummy, made only to make sure there are no errors when empty
             params are passed.
         """
@@ -345,11 +364,12 @@ class smallest_edge_algorithm:
         """ Runs the algorithm. Takes distance matrix and number of nodes and
             performs the algorithm.
         """
+
         self.init_d = d
         self.size = size
 
         self.setup(d)
-        
+
         start = perf_counter()
         logging.info(
             "Staring algorithm",
@@ -365,24 +385,13 @@ class smallest_edge_algorithm:
             )
             self.add(row)
 
-        path, sol = self.get_path_from_edges()
+        self.finish(start)
 
-        logging.info(
-            'Finished.',
-            extra={'runtime': perf_counter() - start}
-        )
-        logging.info(
-            'Best Distance: %s',
-            str(sol),
-            extra={'runtime': 0}
-        )
-        logging.info(
-            'Best Path:\n%s',
-            '->'.join([str(v) for v in path]),
-            extra={'runtime': 0}
-        )
+    def setup(self, d: np.ndarray) -> None:
+        """ Prepaires the variables that are needed for the program execution.
+            Takes np.ndarray as parameter.
+        """
 
-    def setup(self, d) -> None:
         ind = np.triu_indices(self.size, 1)
         self.d = np.array([i for i in zip(ind[0], ind[1], d[ind])] +
                           [i for i in zip(ind[1], ind[0], d[ind])],
@@ -392,7 +401,11 @@ class smallest_edge_algorithm:
         self.free = defaultdict(lambda: True)
         self.edge = 0
 
-    def add(self, row) -> None:
+    def add(self, row: np.ndarray) -> None:
+        """ Checks if the edge passed as np.ndarray is eligible to be added to
+            the solution, and if yes adds it.
+        """
+
         c1, c2, _ = row
         if (self.count[c1] < 2 and
                 self.count[c2] < 2 and
@@ -408,7 +421,11 @@ class smallest_edge_algorithm:
                 self.free[(1, c1)] = False
                 self.free[(2, c2)] = False
 
-    def check_cycle(self, path) -> bool:
+    def check_cycle(self, path: list) -> bool:
+        """ Checks if the list od edges passed as parameters contains any
+            cycles and returns corresponding boolean value.
+        """
+
         cycle = False
         while path:
             visited = []
@@ -427,17 +444,37 @@ class smallest_edge_algorithm:
                 path.remove(v)
         return cycle
 
-    def get_path_from_edges(self):
+    def finish(self, start: float) -> None:
+        """ Obtains path from the list of edges that constitute the solution,
+            calculates the lenghth of the path, and logs all the informatio.
+            Takes time at which program started as parameter.
+        """
+
         path = np.zeros((self.size, 2))
         path[0] = self.added[0]
         for i, p in enumerate(path[:-1]):
             for a in self.added:
                 if p[1] == a[0]:
-                    path[i+1] = a
+                    path[i + 1] = a
                     break
         path = np.array(path[:, 0]).astype('int32')
         sol = self.init_d[path, np.roll(path, 1)].sum()
-        return path, sol
+
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(sol),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in path]),
+            extra={'runtime': 0}
+        )
+
 
 class particle_swarm_optimisation:
     def __init__(self, params: dict) -> None:
@@ -497,7 +534,6 @@ class particle_swarm_optimisation:
             if candidate[-1] < self.gbest[-1]:
                 self.gbest = candidate.copy()
         print(self.gbest)
-                
 
 
 class opt2:
