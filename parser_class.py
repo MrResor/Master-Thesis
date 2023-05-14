@@ -383,7 +383,10 @@ class Parser:
         concorde = sub_p.add_parser(
             'concorde',
             formatter_class=lambda prog: CustomHelpFormatter(prog),
-            add_help=False
+            add_help=False,
+            description="Please note that Concorde for both windows and linux "
+                "distribution must be downloaded by the user independantly and "
+                " placed in the same directory as this program."
         )
         concorde.add_argument(
             '-h',
