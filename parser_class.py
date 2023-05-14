@@ -1,5 +1,4 @@
-from __init__ import argparse, Callable
-import os
+from __init__ import argparse, Callable, os
 
 
 def frange(min: float, max: float) -> Callable[..., float]:

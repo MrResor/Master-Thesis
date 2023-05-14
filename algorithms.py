@@ -1,4 +1,4 @@
-from __init__ import logging
+from __init__ import logging, os
 from time import perf_counter
 from collections import defaultdict
 
@@ -694,4 +694,19 @@ class Opt2:
 
 
 class Concorde:
-    pass
+
+    def __init__(self, params: dict) -> None:
+        """ Dummy, made only to make sure there are no errors when empty
+            params are passed.
+        """
+
+        pass
+    
+    def run(self, d: np.ndarray, size: int) -> None:
+        # prepaire the file using d
+        
+        # call the concorde based on the OS
+
+        # get results out of the created files and log them
+
+        # clean up the mess with files.
