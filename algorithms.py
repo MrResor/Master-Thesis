@@ -446,7 +446,7 @@ class smallest_edge_algorithm:
 
     def finish(self, start: float) -> None:
         """ Obtains path from the list of edges that constitute the solution,
-            calculates the lenghth of the path, and logs all the informatio.
+            calculates the lenghth of the path, and logs all the information.
             Takes time at which program started as parameter.
         """
 
@@ -477,24 +477,81 @@ class smallest_edge_algorithm:
 
 
 class particle_swarm_optimisation:
+    """ Class of Particle Swarm Optimisation. Holds all the variables and
+        functions needed for performing said algorihtm.\n
+
+        Attributes:\n
+        i                           -- Number of iterations.\n
+        n                           -- Number of particles.\n
+        c1_init                     -- Initial weight of current solution.\n
+        c2                          -- Weight of the particle's best solution.
+        \n
+        c3                          -- Weight of the globaly best solution.\n
+        d                           -- Distance between nodes.\n
+        size                        -- Number of nodes.\n
+        particles                   -- List of current locations of particles.
+        \n
+        pbest                       -- Best path for each prticle.\n
+        gbest                       -- Best path so far.\n
+        velocities                  -- Velocieties for each particle.\n
+        c1                          -- Weight of the current solution for given
+        itteration.\n
+
+        Methods:\n
+        run                         -- Runs the algorithm with the distance
+        matrix and information about number of nodes passed.\n
+        setup                       -- Prepaires variables for the algorithm.\n
+        calc_velocity_and_position  -- Calculates new voloticty and position
+        for each particle.\n
+        finish                      -- Puts final information to the logfile.
+    """
+
     def __init__(self, params: dict) -> None:
         """ Initialization of PSO class, takes dict as parameter and assigns
             values from it into corresponding variables.
         """
+
         coefs, self.i, self.n = params.values()
-        self.c1, self.c2, self.c3 = coefs
+        self.c1_init, self.c2, self.c3 = coefs
 
     def run(self, d: np.ndarray, size: int) -> None:
-        self.c1_init = 1
-        self.c2 = 2
-        self.c3 = 2
+        """ Runs the algorithm. Takes distance matrix and number of nodes as
+            parameters and using the parameters set in __init__ performs a
+            simulation of Particle Swarm finding the shortest path.
+        """
+
         self.d = d
         self.size = size
+        start = perf_counter()
+        logging.info(
+            "Staring algorithm",
+            extra={'runtime': perf_counter() - start}
+        )
+        self.setup()
 
-        # Prepaire container for best and parents
+        for i in range(self.i):
+            logging.info(
+                'Iteration %s',
+                str(i),
+                extra={'runtime': perf_counter() - start}
+            )
+            self.c1 = self.c1_init - i / (2 * self.i)
+            for particle, pbest, V in zip(self.particles, self.pbest, self.velocities):
+                self.calc_velocity_and_position(particle, pbest, V)
+                if particle[-1] < pbest[-1]:
+                    pbest = particle.copy()
+            candidate = self.particles[np.argmin(self.particles[-1]), :]
+            if candidate[-1] < self.gbest[-1]:
+                self.gbest = candidate.copy()
+        self.finish(start)
+
+    def setup(self) -> None:
+        """ Sets up all the necessary containers such as particles, pbest,
+            gbest and velocities.
+        """
+
         self.particles = np.zeros((self.n, self.size + 1), dtype='object')
-        # self.velocities = list(np.zeros((self.n, 1, 2)))
-        for i, particle in enumerate(self.particles):
+        for particle in self.particles:
             tmp = np.random.permutation(self.size)
             particle[:-1] = tmp.copy()
             particle[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
@@ -502,39 +559,54 @@ class particle_swarm_optimisation:
         self.gbest = self.particles[np.argmin(self.particles[:, -1]), :].copy()
         self.velocities = np.zeros((self.n, self.size))
 
-        for i in range(self.i):
-            self.c1 = self.c1_init - i / (2 * self.i)
-            for particle, pbest, V in zip(self.particles, self.pbest, self.velocities):
-                p = particle[:-1].astype('int32')
-                y = np.array([1 - 2 * (np.random.rand() < 0.5) if x == pb and x == gb
-                    else int(x == gb) - int(x == pb) for (x, pb, gb) in zip(p, pbest, self.gbest)])
-                r1, r2 = np.random.rand(2)
-                V1 = self.c1 * V + r1 *self.c2 * (- 1 - y) + r2 * self.c3 * (1 - y)
-                lam = V1 + y
-                alpha = 0.35
-                y = [int(v > alpha) - int(v < -alpha) for v in lam]
-                new_p = np.full_like(p, self.size + 1, dtype='int32')
-                for j, v in enumerate(y):
-                    flag = True
-                    if v != 0:
-                        r = pbest[j] if v == -1 else self.gbest[j]
-                        if (r not in new_p):
-                            new_p[j] = r
-                            flag = False
-                    if flag:
-                        r = np.random.randint(self.size)
-                        while (r in new_p):
-                            r = np.random.randint(self.size)
-                        new_p[j] = r
-                p[:] = new_p.copy()
-                particle[-1] = self.d[p, np.roll(p, -1)].sum()
-                if particle[-1] < pbest[-1]:
-                    pbest = particle.copy()
-            candidate = self.particles[np.argmin(self.particles[-1]), :]
-            if candidate[-1] < self.gbest[-1]:
-                self.gbest = candidate.copy()
-        print(self.gbest)
+    def calc_velocity_and_position(self, particle, pbest, V) -> None:
+        """ Calculates the velocity of the particle, and using this velocity
+            updates the positiion of the particle.
+        """
 
+        p = particle[:-1].astype('int32')
+        y = np.array([1 - 2 * (np.random.rand() < 0.5) if x == pb and x == gb
+            else int(x == gb) - int(x == pb) for (x, pb, gb) in zip(p, pbest, self.gbest)])
+        r1, r2 = np.random.rand(2)
+        V1 = self.c1 * V + r1 *self.c2 * (- 1 - y) + r2 * self.c3 * (1 - y)
+        lam = V1 + y
+        alpha = 0.35
+        y = [int(v > alpha) - int(v < -alpha) for v in lam]
+        new_p = np.full_like(p, self.size + 1, dtype='int32')
+        for j, v in enumerate(y):
+            flag = True
+            if v != 0:
+                r = pbest[j] if v == -1 else self.gbest[j]
+                if (r not in new_p):
+                    new_p[j] = r
+                    flag = False
+            if flag:
+                r = np.random.randint(self.size)
+                while (r in new_p):
+                    r = np.random.randint(self.size)
+                new_p[j] = r
+        p[:] = new_p.copy()
+        particle[-1] = self.d[p, np.roll(p, -1)].sum()
+
+    def finish(self, start) -> None:
+        """ Finish up function logging information about path and it's lenght.
+        """
+        
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(self.gbest[-1]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in self.gbest[:-1]]),
+            extra={'runtime': 0}
+        )
+        
 
 class opt2:
     """ Class of 2-Opt Algorithm. Because the method itself is so simple, it
