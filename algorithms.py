@@ -310,6 +310,8 @@ class Ant:
 
     def finish(self, start: float, best: np.ndarray) -> None:
         """ Finish up function logging information about path and it's lenght.
+            Receives time when program was started as a float and a best
+            solution as np.ndarray.
         """
 
         logging.info(
@@ -559,9 +561,15 @@ class particle_swarm_optimisation:
         self.gbest = self.particles[np.argmin(self.particles[:, -1]), :].copy()
         self.velocities = np.zeros((self.n, self.size))
 
-    def calc_velocity_and_position(self, particle, pbest, V) -> None:
+    def calc_velocity_and_position(
+            self,
+            particle: np.ndarray,
+            pbest: np.ndarray,
+            V: np.ndarray
+        ) -> None:
         """ Calculates the velocity of the particle, and using this velocity
-            updates the positiion of the particle.
+            updates the positiion of the particle. Takes particle, it's best
+            position so far and Velocity as parameters.
         """
 
         p = particle[:-1].astype('int32')
@@ -588,10 +596,11 @@ class particle_swarm_optimisation:
         p[:] = new_p.copy()
         particle[-1] = self.d[p, np.roll(p, -1)].sum()
 
-    def finish(self, start) -> None:
+    def finish(self, start: float) -> None:
         """ Finish up function logging information about path and it's lenght.
+            Takes time when p[rogram started in float format as an input.]
         """
-        
+
         logging.info(
             'Finished.',
             extra={'runtime': perf_counter() - start}
@@ -609,12 +618,13 @@ class particle_swarm_optimisation:
         
 
 class opt2:
-    """ Class of 2-Opt Algorithm. Because the method itself is so simple, it
-        consists of single function that performs the algorithm.\n
+    """ Class of 2-Opt Algorithm. Holds all the variables and functions
+        needed for performing said algorihtm.\n
 
         Methods:\n
-        run             -- Runs the algorithm with the distance matrix and
-        information about number of nodes passed.
+        run     -- Runs the algorithm with the distance matrix and information
+        about number of nodes passed.\n
+        finish  -- Puts final information to the logfile.
     """
 
     def __init__(self, params: dict) -> None:
@@ -628,7 +638,9 @@ class opt2:
         """ Runs the algorithm. Takes distance matrix and number of nodes and
             performs the algorithm.
         """
-
+        
+        self.d = d
+        self.size = size
         start = perf_counter()
         logging.info(
             "Staring algorithm",
@@ -647,18 +659,24 @@ class opt2:
             improved = False
             for i in range(size - 2):
                 for j in range(i + 1, size - 1):
-                    diff = -d[
-                        path[[i, j]],
-                        path[[i + 1 % size, j + 1 % size]]
-                    ].sum() + d[
-                        path[[i, i + 1 % size]],
-                        path[[j, j + 1 % size]]
-                    ].sum()
+                    i1 = i + 1 % size
+                    j1 = j + 1 % size
+                    diff = -d[path[[i, j]], path[[i1, j1]]].sum() +\
+                        d[path[[i, i1]], path[[j, j1]]].sum()
                     if diff < 0:
                         path[i+1:j+1] = path[i+1:j+1][::-1]
                         cur_len += diff
                         improved = True
             count += 1
+        self.finish(start, cur_len, path)
+
+    def finish(self, start: float, cur_len: float, path: np.ndarray) -> None:
+        """ Finish up function logging information about path and it's lenght.
+            Receives time when program was started as a float, lenght of the
+            shortest path as a float and the shortest path in the form of
+            np.ndarray.
+        """
+
         logging.info(
             'Finished.',
             extra={'runtime': perf_counter() - start}
