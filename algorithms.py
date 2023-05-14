@@ -29,11 +29,13 @@ class Genetic:
         information about number of nodes passed.\n
         parents_and_best        -- Creates placeholders for parents and
         best solution.\n
-        select_and_mate         -- Selects parents for mating and fills
-        children table with newly created ones.\n
+        select                  -- Selects parents for mating.\n
+        mate                    -- Fills children table with newly created
+        ones.\n
         mutate_evaluate_cull    -- Mutates the children, then evaluates their
         fitness and lastly takes old parents and children together and chooses
-        P best ones to go to next generation.
+        P best ones to go to next generation.\n
+        finish                  -- Puts final information to the logfile.
     """
 
     def __init__(self, params: dict) -> None:
@@ -68,18 +70,11 @@ class Genetic:
                 str(gen),
                 extra={'runtime': perf_counter() - start}
             )
-            self.select_and_mate()
+            selected = self.select()
+            self.mate(selected)
             self.mutate_evaluate_cull()
 
-        logging.info(
-            'Finished.',
-            extra={'runtime': perf_counter() - start}
-        )
-        logging.info(
-            'Best Distance: %s',
-            str(self.best[-1]),
-            extra={'runtime': 0}
-        )
+        self.finish(start)
 
     def parents_and_best(self) -> None:
         """ Creates placeholders for the fittest genome and parents.
@@ -91,40 +86,56 @@ class Genetic:
         self.parents = np.zeros((self.P, self.size + 1), dtype='object')
         for parent in self.parents:
             tmp = np.random.permutation(self.size)
-            parent[:-1] = tmp
+            parent[:-1] = tmp.copy()
             parent[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
 
-    def select_and_mate(self) -> None:
-        """ Based on the fitness of parents, they are chosen to mate, and the
-            mating itself is performed.
+    def select(self) -> np.ndarray:
+        """ Based on the fitness of parents, they are chosen to mate, returns
+            them in the form of np.ndarray.
         """
 
         # Selecting parents for mating and pair them together
-        fitness = np.copy(self.parents[:, -1])
-        probs = np.max(fitness) + 1 - fitness
+        fitness = self.parents[:, -1].copy()
+        probs = (np.max(fitness) + 1 - fitness).astype('float64')
         probs /= np.sum(probs)
         mating = np.random.choice(
             np.arange(self.P),
             self.mating_pool,
             False,
-            probs.astype('float64').flatten()
+            probs.flatten()
         )
-        mating = np.random.choice(mating, (int(self.mating_pool/2), 2), False)
-        # Mating
+        return np.random.choice(mating, (int(self.mating_pool/2), 2), False)
+
+    def mate(self, mating: np.ndarray) -> None:
+        """ Performs mating using chosen parents received in form of
+            np.ndarray as parameter.
+        """
+
         self.children = np.zeros((self.mating_pool, self.size + 1))
         for pair, (p1, p2) in enumerate(mating):
-            child1 = np.copy(self.parents[p2, :-1])
-            child2 = np.copy(self.parents[p1, :-1])
+            par1 = self.parents[p1, :-1]
+            par2 = self.parents[p2, :-1]
+            cut1 = np.random.randint(self.size)
+            cut2 = np.random.randint(cut1, self.size + 1)
+            child1 = np.full_like(par1, self.size + 1)
+            child2 = np.full_like(par2, self.size + 1)
 
-            gene = 0
-            child1[gene], child2[gene] = child2[gene], child1[gene]
-            while child1.shape != np.unique(child1).shape:
-                res = np.where(child1 == child1[gene])[0]
-                gene = res[np.where(res != gene)[0][0]]
-                child1[gene], child2[gene] = child2[gene], child1[gene]
+            child1[cut1:cut2] = par2[cut1:cut2].copy()
+            child2[cut1:cut2] = par1[cut1:cut2].copy()
 
-            self.children[2*pair, :-1] = child1
-            self.children[2*pair + 1, :-1] = child2
+            for i in range(self.size):
+                if i < cut1 or i >= cut2:
+                    v1 = par1[i]
+                    v2 = par2[i]
+                    while (v1 in child1):
+                        v1 = par1[np.where(child1 == v1)][0]
+                    while (v2 in child2):
+                        v2 = par2[np.where(child2 == v2)][0]
+                    child1[i] = v1
+                    child2[i] = v2
+
+            self.children[2*pair, :-1] = child1.copy()
+            self.children[2*pair + 1, :-1] = child2.copy()
 
     def mutate_evaluate_cull(self) -> None:
         """ Performs mutation on children, calculates their fitness and then
@@ -147,9 +158,29 @@ class Genetic:
         # Create new parents
         cross_gen = np.concatenate((self.parents, self.children), axis=0)
         cross_gen = cross_gen[cross_gen[:, -1].argsort()]
-        self.parents = cross_gen[:self.P, :]
-        self.best = self.parents[0, :] if self.best[-1] > self.parents[
-            0, -1] else self.best
+        self.parents = cross_gen[:self.P, :].copy()
+        self.best = self.parents[0, :].copy() if self.best[
+            -1] > self.parents[0, -1] else self.best
+
+    def finish(self, start: float) -> None:
+        """ Finish up function logging information about path and it's lenght.
+            Receives time when program was started as a float.
+        """
+
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(self.best[-1]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(int(v)) for v in self.best[:-1]]),
+            extra={'runtime': 0}
+        )
 
 
 class Ant:
@@ -181,7 +212,8 @@ class Ant:
         ants_and_a      -- Creates ants, a and start for each tour.\n
         ants_traveling  -- Simulates the traveling process of ants along with
         decision making.\n
-        pheromones      -- Simulates the evaporation of pheromone in tau.
+        pheromones      -- Simulates the evaporation of pheromone in tau.\n
+        finish          -- Puts final information to the logfile.
     """
 
     def __init__(self, params: dict) -> None:
@@ -217,19 +249,11 @@ class Ant:
             best = self.ants[index] if best[-1] > self.ants[index][
                 -1] else best
             self.pheromones()
-        logging.info(
-            'Finished.',
-            extra={'runtime': perf_counter() - start}
-        )
-        logging.info(
-            'Best Distance: %s',
-            str(best[-1]),
-            extra={'runtime': 0}
-        )
+        self.finish(start, best)
 
     def ants_tables(self) -> np.ndarray:
         """ Creates necessary tables for the algorithm to run. These tables
-            need to be created just once.
+            need to be created just once. Returnes np.ndarray
         """
 
         self.tau = np.full((self.size, self.size), 1/self.d.max())
@@ -284,75 +308,51 @@ class Ant:
             self.tau[a, np.roll(a, -1)] += 1/ant[-1]
             self.tau[a, np.roll(a, 1)] += 1/ant[-1]
 
-
-class smallest_edge_algorithm:
-    """ Class of Smallest Edge Algorithm. Because the method itself is so
-        simple, it consists of single function that performs the algorithm.\n
-
-        Methods:\n
-        run             -- Runs the algorithm with the distance matrix and
-        information about number of nodes passed.
-    """
-
-    def __init__(self, params) -> None:
-        """ Dummy, made only to make sure there are no errors when empty
-            params are passed.
+    def finish(self, start: float, best: np.ndarray) -> None:
+        """ Finish up function logging information about path and it's lenght.
+            Receives time when program was started as a float and a best
+            solution as np.ndarray.
         """
 
-        pass
-
-    def run(self, d: np.ndarray, size: int) -> None:
-        """ Runs the algorithm. Takes distance matrix and number of nodes and
-            performs the algorithm.
-        """
-
-        # transform distance matrix into list of vertices, with no duplicates.
-        ind = np.triu_indices(size, 1)
-        d = np.array(
-            [[i1, i2, i3] for i1, i2, i3 in zip(ind[0], ind[1], d[ind])]
-        )
-        start = perf_counter()
-        logging.info(
-            "Staring algorithm",
-            extra={'runtime': perf_counter() - start}
-        )
-        d = d[d[:, -1].argsort()]
-        sol = 0
-        included = defaultdict(lambda: 0)
-        city_count = 0
-        for i, row in enumerate(d):
-            logging.info(
-                'Row %s / %s',
-                str(i),
-                str(d.shape[0]),
-                extra={'runtime': perf_counter() - start}
-            )
-            c1, c2, dist = row
-            if included[c1] < 2 and included[c2] < 2:
-                sol += dist
-                city_count += 1
-                included[c1] += 1
-                included[c2] += 1
-            if city_count == size:
-                break
         logging.info(
             'Finished.',
             extra={'runtime': perf_counter() - start}
         )
         logging.info(
             'Best Distance: %s',
-            str(sol),
+            str(best[-1]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best path:\n%s',
+            '->'.join([str(v) for v in best[:-1]]),
             extra={'runtime': 0}
         )
 
 
-class opt2:
-    """ Class of 2-Opt Algorithm. Because the method itself is so simple, it
-        consists of single function that performs the algorithm.\n
+class smallest_edge_algorithm:
+    """ Class of Smallest Edge Algorithm. Because the method itself is so
+        simple, it consists of single function that performs the algorithm.\n
+
+        Attributes:\n
+        init_d      -- Distance between nodes.\n
+        size        -- Number of nodes.\n
+        d           -- List of edges in descending order of length.\n
+        added       -- Holds in edges in order in which they were added.\n
+        count       -- Counts number of times each vertex is present in current
+        solution.\n
+        free        -- Ensures that vertex cannot be used twice on the same
+        position in edges in current solution.\n
+        edge        -- Number of edges in current solution.\n
 
         Methods:\n
-        run             -- Runs the algorithm with the distance matrix and
-        information about number of nodes passed.
+        run         -- Runs the algorithm with the distance matrix and
+        information about number of nodes passed.\n
+        setup       -- Prepaires variables for the algorithm.\n
+        add         -- Checks if edge is elligible to be added to the solution.
+        \n
+        check_cycle -- Checks if in the given path a cycle is present.\n
+        finish      -- Puts final information to the logfile.
     """
 
     def __init__(self, params: dict) -> None:
@@ -367,6 +367,280 @@ class opt2:
             performs the algorithm.
         """
 
+        self.init_d = d
+        self.size = size
+
+        self.setup(d)
+
+        start = perf_counter()
+        logging.info(
+            "Staring algorithm",
+            extra={'runtime': perf_counter() - start}
+        )
+        self.d = self.d[self.d[:, -1].argsort(), :]
+        for i, row in enumerate(self.d):
+            logging.info(
+                'Row %s / %s',
+                str(i),
+                str(self.d.shape[0]),
+                extra={'runtime': perf_counter() - start}
+            )
+            self.add(row)
+
+        self.finish(start)
+
+    def setup(self, d: np.ndarray) -> None:
+        """ Prepaires the variables that are needed for the program execution.
+            Takes np.ndarray as parameter.
+        """
+
+        ind = np.triu_indices(self.size, 1)
+        self.d = np.array([i for i in zip(ind[0], ind[1], d[ind])] +
+                          [i for i in zip(ind[1], ind[0], d[ind])],
+                          dtype='object')
+        self.added = []
+        self.count = defaultdict(lambda: 0)
+        self.free = defaultdict(lambda: True)
+        self.edge = 0
+
+    def add(self, row: np.ndarray) -> None:
+        """ Checks if the edge passed as np.ndarray is eligible to be added to
+            the solution, and if yes adds it.
+        """
+
+        c1, c2, _ = row
+        if (self.count[c1] < 2 and
+                self.count[c2] < 2 and
+                self.free[(1, c1)] and
+                self.free[(2, c2)]):
+            new_path = self.added.copy()
+            new_path.append((c1, c2))
+            if not self.check_cycle(new_path) or self.edge == (self.size - 1):
+                self.added.append((c1, c2))
+                self.edge += 1
+                self.count[c1] += 1
+                self.count[c2] += 1
+                self.free[(1, c1)] = False
+                self.free[(2, c2)] = False
+
+    def check_cycle(self, path: list) -> bool:
+        """ Checks if the list od edges passed as parameters contains any
+            cycles and returns corresponding boolean value.
+        """
+
+        cycle = False
+        while path:
+            visited = []
+            p0 = path[0]
+            while p0 not in visited:
+                if len(visited) == len(path):
+                    break
+                visited.append(p0)
+                for p1 in path:
+                    if p0[1] == p1[0]:
+                        p0 = p1
+                        break
+            if visited[0][0] == visited[-1][1]:
+                cycle = True
+            for v in visited:
+                path.remove(v)
+        return cycle
+
+    def finish(self, start: float) -> None:
+        """ Obtains path from the list of edges that constitute the solution,
+            calculates the lenghth of the path, and logs all the information.
+            Takes time at which program started as parameter.
+        """
+
+        path = np.zeros((self.size, 2))
+        path[0] = self.added[0]
+        for i, p in enumerate(path[:-1]):
+            for a in self.added:
+                if p[1] == a[0]:
+                    path[i + 1] = a
+                    break
+        path = np.array(path[:, 0]).astype('int32')
+        sol = self.init_d[path, np.roll(path, 1)].sum()
+
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(sol),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in path]),
+            extra={'runtime': 0}
+        )
+
+
+class particle_swarm_optimisation:
+    """ Class of Particle Swarm Optimisation. Holds all the variables and
+        functions needed for performing said algorihtm.\n
+
+        Attributes:\n
+        i                           -- Number of iterations.\n
+        n                           -- Number of particles.\n
+        c1_init                     -- Initial weight of current solution.\n
+        c2                          -- Weight of the particle's best solution.
+        \n
+        c3                          -- Weight of the globaly best solution.\n
+        d                           -- Distance between nodes.\n
+        size                        -- Number of nodes.\n
+        particles                   -- List of current locations of particles.
+        \n
+        pbest                       -- Best path for each prticle.\n
+        gbest                       -- Best path so far.\n
+        velocities                  -- Velocieties for each particle.\n
+        c1                          -- Weight of the current solution for given
+        itteration.\n
+
+        Methods:\n
+        run                         -- Runs the algorithm with the distance
+        matrix and information about number of nodes passed.\n
+        setup                       -- Prepaires variables for the algorithm.\n
+        calc_velocity_and_position  -- Calculates new voloticty and position
+        for each particle.\n
+        finish                      -- Puts final information to the logfile.
+    """
+
+    def __init__(self, params: dict) -> None:
+        """ Initialization of PSO class, takes dict as parameter and assigns
+            values from it into corresponding variables.
+        """
+
+        coefs, self.i, self.n = params.values()
+        self.c1_init, self.c2, self.c3 = coefs
+
+    def run(self, d: np.ndarray, size: int) -> None:
+        """ Runs the algorithm. Takes distance matrix and number of nodes as
+            parameters and using the parameters set in __init__ performs a
+            simulation of Particle Swarm finding the shortest path.
+        """
+
+        self.d = d
+        self.size = size
+        start = perf_counter()
+        logging.info(
+            "Staring algorithm",
+            extra={'runtime': perf_counter() - start}
+        )
+        self.setup()
+
+        for i in range(self.i):
+            logging.info(
+                'Iteration %s',
+                str(i),
+                extra={'runtime': perf_counter() - start}
+            )
+            self.c1 = self.c1_init - i / (2 * self.i)
+            for particle, pbest, V in zip(self.particles, self.pbest, self.velocities):
+                self.calc_velocity_and_position(particle, pbest, V)
+                if particle[-1] < pbest[-1]:
+                    pbest = particle.copy()
+            candidate = self.particles[np.argmin(self.particles[-1]), :]
+            if candidate[-1] < self.gbest[-1]:
+                self.gbest = candidate.copy()
+        self.finish(start)
+
+    def setup(self) -> None:
+        """ Sets up all the necessary containers such as particles, pbest,
+            gbest and velocities.
+        """
+
+        self.particles = np.zeros((self.n, self.size + 1), dtype='object')
+        for particle in self.particles:
+            tmp = np.random.permutation(self.size)
+            particle[:-1] = tmp.copy()
+            particle[-1] = self.d[tmp, np.roll(tmp, -1)].sum()
+        self.pbest = self.particles.copy()
+        self.gbest = self.particles[np.argmin(self.particles[:, -1]), :].copy()
+        self.velocities = np.zeros((self.n, self.size))
+
+    def calc_velocity_and_position(
+            self,
+            particle: np.ndarray,
+            pbest: np.ndarray,
+            V: np.ndarray
+        ) -> None:
+        """ Calculates the velocity of the particle, and using this velocity
+            updates the positiion of the particle. Takes particle, it's best
+            position so far and Velocity as parameters.
+        """
+
+        p = particle[:-1].astype('int32')
+        y = np.array([1 - 2 * (np.random.rand() < 0.5) if x == pb and x == gb
+            else int(x == gb) - int(x == pb) for (x, pb, gb) in zip(p, pbest, self.gbest)])
+        r1, r2 = np.random.rand(2)
+        V1 = self.c1 * V + r1 *self.c2 * (- 1 - y) + r2 * self.c3 * (1 - y)
+        lam = V1 + y
+        alpha = 0.35
+        y = [int(v > alpha) - int(v < -alpha) for v in lam]
+        new_p = np.full_like(p, self.size + 1, dtype='int32')
+        for j, v in enumerate(y):
+            flag = True
+            if v != 0:
+                r = pbest[j] if v == -1 else self.gbest[j]
+                if (r not in new_p):
+                    new_p[j] = r
+                    flag = False
+            if flag:
+                r = np.random.randint(self.size)
+                while (r in new_p):
+                    r = np.random.randint(self.size)
+                new_p[j] = r
+        p[:] = new_p.copy()
+        particle[-1] = self.d[p, np.roll(p, -1)].sum()
+
+    def finish(self, start: float) -> None:
+        """ Finish up function logging information about path and it's lenght.
+            Takes time when p[rogram started in float format as an input.]
+        """
+
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+        logging.info(
+            'Best Distance: %s',
+            str(self.gbest[-1]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in self.gbest[:-1]]),
+            extra={'runtime': 0}
+        )
+        
+
+class opt2:
+    """ Class of 2-Opt Algorithm. Holds all the variables and functions
+        needed for performing said algorihtm.\n
+
+        Methods:\n
+        run     -- Runs the algorithm with the distance matrix and information
+        about number of nodes passed.\n
+        finish  -- Puts final information to the logfile.
+    """
+
+    def __init__(self, params: dict) -> None:
+        """ Dummy, made only to make sure there are no errors when empty
+            params are passed.
+        """
+
+        pass
+
+    def run(self, d: np.ndarray, size: int) -> None:
+        """ Runs the algorithm. Takes distance matrix and number of nodes and
+            performs the algorithm.
+        """
+        
+        self.d = d
+        self.size = size
         start = perf_counter()
         logging.info(
             "Staring algorithm",
@@ -385,18 +659,24 @@ class opt2:
             improved = False
             for i in range(size - 2):
                 for j in range(i + 1, size - 1):
-                    diff = -d[
-                        path[[i, j]],
-                        path[[i + 1 % size, j + 1 % size]]
-                    ].sum() + d[
-                        path[[i, i + 1 % size]],
-                        path[[j, j + 1 % size]]
-                    ].sum()
+                    i1 = i + 1 % size
+                    j1 = j + 1 % size
+                    diff = -d[path[[i, j]], path[[i1, j1]]].sum() +\
+                        d[path[[i, i1]], path[[j, j1]]].sum()
                     if diff < 0:
                         path[i+1:j+1] = path[i+1:j+1][::-1]
                         cur_len += diff
                         improved = True
             count += 1
+        self.finish(start, cur_len, path)
+
+    def finish(self, start: float, cur_len: float, path: np.ndarray) -> None:
+        """ Finish up function logging information about path and it's lenght.
+            Receives time when program was started as a float, lenght of the
+            shortest path as a float and the shortest path in the form of
+            np.ndarray.
+        """
+
         logging.info(
             'Finished.',
             extra={'runtime': perf_counter() - start}
@@ -404,5 +684,10 @@ class opt2:
         logging.info(
             'Best Distance: %s',
             str(cur_len),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
