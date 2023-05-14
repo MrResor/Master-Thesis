@@ -132,6 +132,7 @@ class Parser:
         Optimisation algorithm's parameters.\n
         __opt2_params       -- Creates subparser for 2-opt algorithm's
         parameters.\n
+        __concorde_params   -- Creates subparser for Concorde's parameters.\n
         parse               -- Parses the arguments collected from command
         line.
     """
@@ -147,7 +148,7 @@ class Parser:
             description='Program for solving of TSP using different methods.',
             formatter_class=lambda prog: CustomHelpFormatter(
                 prog,
-                max_help_position=35
+                max_help_position=45
             ),
             add_help=False
         )
@@ -176,6 +177,7 @@ class Parser:
         self.__sea_params(sub_p)
         self.__pso_params(sub_p)
         self.__opt2_params(sub_p)
+        self.__concorde_params(sub_p)
 
     def __ants_params(self, sub_p) -> None:
         """ Initialization of subparser for ants algorithm with help flag and
@@ -366,6 +368,24 @@ class Parser:
             add_help=False
         )
         opt2.add_argument(
+            '-h',
+            '--help',
+            action='help',
+            default=argparse.SUPPRESS,
+            help='Show this help message and exit.'
+        )
+
+    def __concorde_params(self, sub_p) -> None:
+        """ Initialization of subparser for Concorde with help
+            flag. Takes _SubParsersAction as parameter.
+        """
+
+        concorde = sub_p.add_parser(
+            'concorde',
+            formatter_class=lambda prog: CustomHelpFormatter(prog),
+            add_help=False
+        )
+        concorde.add_argument(
             '-h',
             '--help',
             action='help',
