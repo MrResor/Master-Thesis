@@ -74,10 +74,10 @@ class Console_App:
         choice = {
             'ants': algo.Ant,
             'genetic': algo.Genetic,
-            'sea': algo.smallest_edge_algorithm,
-            'pso': algo.particle_swarm_optimisation,
-            '2-opt': algo.opt2,
-            'concorde': algo.concorde
+            'sea': algo.Smallest_Edge_Algorithm,
+            'pso': algo.Particle_Swarm_Optimisation,
+            '2-opt': algo.Opt2,
+            'concorde': algo.Concorde
         }
         params_names = {
             'ants': ['tours', 'alpha', 'beta', 'rho'],
