@@ -76,7 +76,8 @@ class Console_App:
             'genetic': algo.Genetic,
             'sea': algo.smallest_edge_algorithm,
             'pso': algo.particle_swarm_optimisation,
-            '2-opt': algo.opt2
+            '2-opt': algo.opt2,
+            'concorde': algo.concorde
         }
         params_names = {
             'ants': ['tours', 'alpha', 'beta', 'rho'],
@@ -89,6 +90,7 @@ class Console_App:
                     'iterations',
                     'particles_number'],
             '2-opt': [],
+            'concorde': []
         }
         params = vars(args)
         params = {key: params[key] for key in params_names[args.algorithm]}
