@@ -330,7 +330,7 @@ class Ant:
         )
 
 
-class smallest_edge_algorithm:
+class Smallest_Edge_Algorithm:
     """ Class of Smallest Edge Algorithm. Because the method itself is so
         simple, it consists of single function that performs the algorithm.\n
 
@@ -478,7 +478,7 @@ class smallest_edge_algorithm:
         )
 
 
-class particle_swarm_optimisation:
+class Particle_Swarm_Optimisation:
     """ Class of Particle Swarm Optimisation. Holds all the variables and
         functions needed for performing said algorihtm.\n
 
@@ -617,7 +617,7 @@ class particle_swarm_optimisation:
         )
         
 
-class opt2:
+class Opt2:
     """ Class of 2-Opt Algorithm. Holds all the variables and functions
         needed for performing said algorihtm.\n
 
@@ -691,3 +691,7 @@ class opt2:
             '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
+
+
+class Concorde:
+    pass
