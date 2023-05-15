@@ -802,8 +802,8 @@ class Concorde:
 
         # clean up the mess with files.
         files = ['Otmp.mas', 'Otmp.pul', 'Otmp.sav', 'out.tmp', 'tmp.mas',
-                 'tmp.pul', 'tmp.sav', 'tmp.sol', 'O.sav', 'O.pull', 'tmp.tsp',
-                 '.mas', '.pul', '.sav', '.sol']
+                 'tmp.pul', 'tmp.sav', 'tmp.sol', 'O.sav', 'O.pul', 'tmp.tsp',
+                 '.mas', '.pul', '.sav', '.sol', 'O.mas', ]
         for file in files:
             if os.path.isfile(file):
                 os.remove(file)
