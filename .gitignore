@@ -3,7 +3,9 @@
 pyvenv.cfg
 /etc
 /share
-
+*.exe
+*.pdf
+*.DLL
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -74,8 +74,10 @@ class Console_App:
         choice = {
             'ants': algo.Ant,
             'genetic': algo.Genetic,
-            'sea': algo.smallest_edge_algorithm,
-            '2-opt': algo.opt2
+            'sea': algo.Smallest_Edge_Algorithm,
+            'pso': algo.Particle_Swarm_Optimisation,
+            '2-opt': algo.Opt2,
+            'concorde': algo.Concorde
         }
         params_names = {
             'ants': ['tours', 'alpha', 'beta', 'rho'],
@@ -85,6 +87,7 @@ class Console_App:
                         'generation_count'],
             'sea': [],
             '2-opt': [],
+            'concorde': []
         }
         params = vars(args)
         params = {key: params[key] for key in params_names[args.algorithm]}

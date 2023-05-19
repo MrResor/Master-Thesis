@@ -1,4 +1,4 @@
-from __init__ import logging
+from __init__ import logging, os
 from time import perf_counter
 from collections import defaultdict
 
@@ -7,7 +7,7 @@ from __init__ import np
 
 class Genetic:
     """ Class of Genetic Algorithm. Holds all the variables and functions
-        needed for performing said algorihtm.\n
+        needed for performing said algorithm.\n
 
         Attributes:\n
         P                       -- Size of initial population.\n
@@ -185,7 +185,7 @@ class Genetic:
 
 class Ant:
     """ Class of Ant Colony Algorithm. Holds all the variables and functions
-        needed for performing said algorihtm.\n
+        needed for performing said algorithm.\n
 
         Attributes:\n
         tours           -- Number of tours simulated by the program.\n
@@ -330,7 +330,7 @@ class Ant:
         )
 
 
-class smallest_edge_algorithm:
+class Smallest_Edge_Algorithm:
     """ Class of Smallest Edge Algorithm. Because the method itself is so
         simple, it consists of single function that performs the algorithm.\n
 
@@ -478,9 +478,9 @@ class smallest_edge_algorithm:
         )
 
 
-class particle_swarm_optimisation:
+class Particle_Swarm_Optimisation:
     """ Class of Particle Swarm Optimisation. Holds all the variables and
-        functions needed for performing said algorihtm.\n
+        functions needed for performing said algorithm.\n
 
         Attributes:\n
         i                           -- Number of iterations.\n
@@ -617,9 +617,9 @@ class particle_swarm_optimisation:
         )
         
 
-class opt2:
+class Opt2:
     """ Class of 2-Opt Algorithm. Holds all the variables and functions
-        needed for performing said algorihtm.\n
+        needed for performing said algorithm.\n
 
         Methods:\n
         run     -- Runs the algorithm with the distance matrix and information
@@ -691,3 +691,119 @@ class opt2:
             '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
+
+
+class Concorde:
+    """ Class of Concorde. Holds all the variables and functions needed for
+        running the Concorde program.\n
+
+        Methods:\n
+        run         -- Runs the algorithm with the distance matrix and information
+        about number of nodes passed.\n
+        setup       -- Prepaires file that is used by concorde executable to
+        caluclate shortest path.\n
+        get_output  --
+    """
+
+    def __init__(self, params: dict) -> None:
+        """ Dummy, made only to make sure there are no errors when empty
+            params are passed.
+        """
+
+        pass
+    
+    def run(self, d: np.ndarray, size: int) -> None:
+        """ Runs the Concorde program. Takes distance matrix and number of
+            nodes.
+        """
+        start = perf_counter()
+        logging.info(
+            "Staring algorithm",
+            extra={'runtime': perf_counter() - start}
+        )
+        self.setup(d, size)
+
+        # call the concorde based on the OS
+        if os.name == 'nt':
+            os.system('cmd /c "concorde.exe tmp.tsp > out.tmp"')
+        else:
+            print('Create this for linux pls')
+            quit()
+
+        # get results out of the created files and log them
+        self.get_output(size)
+
+        self.cleanup()
+
+        logging.info(
+            'Finished.',
+            extra={'runtime': perf_counter() - start}
+        )
+
+    def setup(self, d, size) -> None:
+        """ Setups the .tsp file that will be used by Concorde to calculate
+            shortest path.
+        """
+        # prepaire the file using d
+        with open('tmp.tsp', 'w') as f:
+            f.write('NAME : tmp\n')
+            f.write('TYPE : TSP\n')
+            f.write(f'DIMENSION : {size}\n' )
+            f.write('EDGE_WEIGHT_TYPE : EXPLICIT\n')
+            f.write('EDGE_WEIGHT_FORMAT : FULL_MATRIX\n')
+            f.write('EDGE_WEIGHT_SECTION\n')
+            for row in d:
+                f.write(' ' + ' '.join([str(int(v)) for v in row]) + '\n')
+            f.write('EOF')
+
+    def get_output(self, size) -> None:
+        """ Reads the desired output out of the file created by command line /
+            terminal and logs it. 
+        """
+
+        with open('out.tmp', 'r') as f:
+            line = ''
+            while 'Optimal Solution' not in line:
+                line = f.readline()
+            sol = line.split()[-1]
+            while 'Total Running Time' not in line:
+                line = f.readline()
+            prog_time = line.split()[-2]
+
+        with open('tmp.sol', 'r') as f:
+            f.readline()
+            order = f.readlines()
+        path = np.zeros(size, dtype='int32')
+        counter = 0
+        for o in order:
+            for el in o.strip().split():
+                path[counter] = int(el)
+                counter += 1
+        
+        logging.info(
+            'Best Distance: %s',
+            str(sol),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Best Path:\n%s',
+            '->'.join([str(v) for v in path]),
+            extra={'runtime': 0}
+        )
+        logging.info(
+            'Program Execution time: %s',
+            str(prog_time),
+            extra={'runtime': 0}
+        )
+
+    def cleanup(self) -> None:
+        """ Remove unnecesary files created by Concorde and this program.
+        """
+
+        # clean up the mess with files.
+        files = ['Otmp.mas', 'Otmp.pul', 'Otmp.sav', 'out.tmp', 'tmp.mas',
+                 'tmp.pul', 'tmp.sav', 'tmp.sol', 'O.sav', 'O.pul', 'tmp.tsp',
+                 '.mas', '.pul', '.sav', '.sol', 'O.mas', ]
+        for file in files:
+            if os.path.isfile(file):
+                os.remove(file)
