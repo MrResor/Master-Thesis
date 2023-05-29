@@ -727,8 +727,7 @@ class Concorde:
         if os.name == 'nt':
             os.system('cmd /c "concorde.exe tmp.tsp > out.tmp"')
         else:
-            print('Create this for linux pls')
-            quit()
+            os.system('./concorde tmp.tsp > out.tmp')
 
         # get results out of the created files and log them
         self.get_output(size)
