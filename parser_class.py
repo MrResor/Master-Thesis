@@ -70,29 +70,6 @@ def is_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f'{path}\nPlease use .csv file.')
     return path
 
-
-# def sum_to_one(var: str) -> list:
-#     """ New Type function for argparse - Checks all nargs passed to see if
-#         they are of type float, and then if they sum to 1.\n
-#         var - one of the nargs passed, processed one by one.
-#     """
-
-#     try:
-#         var = float(var)
-#     except ValueError:
-#         raise argparse.ArgumentTypeError('Must be a float value.')
-#     sum_to_one.s += var
-#     sum_to_one.c += 1
-#     if sum_to_one.c == 3 and sum_to_one.s != 1:
-#         raise argparse.ArgumentTypeError('Coefficients do not sum to 1.')
-#     return var
-
-
-# # Declared static variables for sum_to_one
-# sum_to_one.s = 0
-# sum_to_one.c = 0
-
-
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     """ Class of custom formatter that overwrites function that prints --help
         to remove display of metavars.\n
