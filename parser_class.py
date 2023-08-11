@@ -70,6 +70,7 @@ def is_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f'{path}\nPlease use .csv file.')
     return path
 
+
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     """ Class of custom formatter that overwrites function that prints --help
         to remove display of metavars.\n
@@ -139,6 +140,12 @@ class Parser:
             'path',
             type=is_path,
             help='Path to database file.'
+        )
+        self.__p.add_argument(
+            '-l',
+            '--logging',
+            action='store_true',
+            help='Flag for switching on logging'
         )
         sub_p = self.__p.add_subparsers(
             title='algorithms',
