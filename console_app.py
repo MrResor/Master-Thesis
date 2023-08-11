@@ -34,12 +34,14 @@ class Console_App:
             passed to command line. Takes Namespace of arguments as parameter.
         """
 
-        logging.basicConfig(
-            filename=datetime.now().strftime('%d-%m-%Y_%H-%M-%S') + '.log',
-            level=logging.INFO,
-            format='[%(asctime)s] -> {%(levelname)s} '
-            '(%(runtime)s) %(message)s'
-        )
+        if args.logging:
+            logging.basicConfig(
+                filename=datetime.now().strftime('%d-%m-%Y_%H-%M-%S') + '.log',
+                level=logging.INFO,
+                format='[%(asctime)s] -> {%(levelname)s} '
+                '(%(runtime)s) %(message)s'
+            )
+        np.seterr(divide='ignore')
         self.load_data(args.path)
         self.setup_algorithm(args)
 
