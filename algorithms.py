@@ -165,10 +165,10 @@ class Genetic:
         """ Finish up function logging information about path and it's lenght.
             Receives time when program was started as a float.
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -180,6 +180,9 @@ class Genetic:
             '->'.join([str(int(v)) for v in self.best[:-1]]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(self.best[-1]))
+        print('->'.join([str(int(v)) for v in self.best[:-1]]))
 
 
 class Ant:
@@ -312,10 +315,10 @@ class Ant:
             Receives time when program was started as a float and a best
             solution as np.ndarray.
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -327,6 +330,7 @@ class Ant:
             '->'.join([str(v) for v in best[:-1]]),
             extra={'runtime': 0}
         )
+        print(end)
         print(str(best[-1]))
         print('->'.join([str(v) for v in best[:-1]]))
 
@@ -463,9 +467,10 @@ class Smallest_Edge_Algorithm:
         path = np.array(path[:, 0]).astype('int32')
         sol = self.init_d[path, np.roll(path, 1)].sum()
 
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -477,6 +482,9 @@ class Smallest_Edge_Algorithm:
             '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(sol))
+        print('->'.join([str(v) for v in path]))
 
 
 class Particle_Swarm_Optimisation:
@@ -531,7 +539,6 @@ class Particle_Swarm_Optimisation:
             extra={'runtime': perf_counter() - start}
         )
         self.setup()
-        # self.c1 = self.c1_init
         for i in range(self.i):
             logging.info(
                 'Iteration %s',
@@ -602,10 +609,10 @@ class Particle_Swarm_Optimisation:
         """ Finish up function logging information about path and it's lenght.
             Takes time when p[rogram started in float format as an input.]
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -617,6 +624,9 @@ class Particle_Swarm_Optimisation:
             '->'.join([str(v) for v in self.gbest[:-1]]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(self.gbest[-1]))
+        print('->'.join([str(v) for v in self.gbest[:-1]]))
 
 
 class Opt2:
@@ -640,7 +650,7 @@ class Opt2:
         """ Runs the algorithm. Takes distance matrix and number of nodes and
             performs the algorithm.
         """
-        
+
         self.d = d
         self.size = size
         start = perf_counter()
@@ -678,10 +688,10 @@ class Opt2:
             shortest path as a float and the shortest path in the form of
             np.ndarray.
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -693,6 +703,9 @@ class Opt2:
             '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(cur_len))
+        print('->'.join([str(v) for v in path]))
 
 
 class Concorde:
@@ -780,7 +793,7 @@ class Concorde:
             for el in o.strip().split():
                 path[counter] = int(el)
                 counter += 1
-    
+
         logging.info(
             'Best Distance: %s',
             str(sol),
@@ -796,6 +809,8 @@ class Concorde:
             str(prog_time),
             extra={'runtime': 0}
         )
+        print(str(sol))
+        print('->'.join([str(v) for v in path]))
 
     def cleanup(self) -> None:
         """ Remove unnecesary files created by Concorde and this program.
