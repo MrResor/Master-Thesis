@@ -6,6 +6,7 @@ pyvenv.cfg
 *.exe
 *.pdf
 *.DLL
+.vscode
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,57 +1,75 @@
-# Master-Thesis
+# Implementation details
 
-Program created for my Master Thesis. It computes solutions to Traveling Salesperson Problem (TSP) using different methods. These are:
-* Ant Colony System
-* Genetic Algorithm
-* 2-opt
-* Shortest Edge Algorithm
-* Particle Swarm Optimisation
-* Concorde
+The program was developed using *Python* programming language (version 3.8.11), using libraries *Numpy* and *Pandas*, as well as their dependencies. The data sets that the program uses are provided in *.csv* format, with headers 'from', 'to' and 'dist'. Third column, 'dist', holds a distance between nodes 'from' and 'too'. Both 'from' and 'to' are indexes of nodes (starting from 1). These *.csv* files were obtained by transforming distance matrix for a symmetric TSP problem (all the considered data sets come from TSPLIB). It is done by first transforming said matrix into the upper triangle matrix and then writing it down row by row in a *.csv* file, where each row contains 'row' number, 'column' number and distance. Each row corresponds to one non-zero value from the upper triangle matrix, and 'row' and 'column' numbers represent the row and column indexes under which the non-zero value is found (examples of ready data can be seen in [datasets](https://github.com/MrResor/Master-Thesis/tree/develop/datasets) folder). 
 
-## Installation
+It is possible to use a different data set, but the format of the input data must be the same. It is important to note that the Concorde implementation will ignore the decimal part of any digits in 'dist' column as they will be cast to integer values.
 
-Install python 3.9.5 ([link](https://www.python.org/downloads/release/python-395/)). In the location where you want to run the application first pull the git repository. Then run these two commands:
+## Software installation
 
-```bash
-python -m venv ./
+Before using the program, the following steps should be done. First, installation of *Python*. Although version 3.8.11 is the best one to use, it cannot be installed on the Windows operating system, though, the *Python* version 3.8.10 can also be used to run the software package. *Python* can be downloaded from official web page (https://www.python.org/downloads/release/python-3810/). During installation it should be ensured that the *pip* is installed and the installation path should be recorded (selecting 'Install now' option installs *pip* package, and the installation path is as in the example: ```C:\Users\User_Name\AppData\Local\Programs\Python\Python38```). Then the following commands should be executed in the location of the program (in PowerShell)
+
+```powershell
+installation_path\python.exe -m venv ./
+./Scripts/Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-NOTE: Usage of Concorde requires downloading of the program itself from this [site](https://www.math.uwaterloo.ca/tsp/concorde/downloads/downloads.htm) and placing it in the program directory.
+where the requirements file is provided with the program files. Occasionally, the second command will cause an error and in this case the following command should be executed first
 
-## Usage
-
-```bash
-python main.py ./path/to/dataset.csv method
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted
 ```
 
-The dataset passed to the program should be in the same form as [this](https://github.com/MrResor/Master-Thesis/blob/main/five.csv). It is a upper triangle of distance matrix, without main diagonal. From column can be interpreted as index of a row and to as index of a column, while dist is the value that will be found under those indexes. Please note that the indexing in the file starts from 1. Several datasets are provided with a program, those are:
+These steps ensure that most of the program functionality is ready to be used, however Concorde procedure requires two extra files:
 
-* [five.csv](https://github.com/MrResor/Master-Thesis/blob/main/five.csv)
-* [ulysses16.csv](https://github.com/MrResor/Master-Thesis/blob/main/ulysses16.csv)
-* [bays29.csv](https://github.com/MrResor/Master-Thesis/blob/main/bays29.csv)
-* [att48.csv](https://github.com/MrResor/Master-Thesis/blob/main/att48.csv)
-* [pr76.csv](https://github.com/MrResor/Master-Thesis/blob/main/pr76.csv)
-* [eil101.csv](https://github.com/MrResor/Master-Thesis/blob/main/eil101.csv)
-* [qa194.csv](https://github.com/MrResor/Master-Thesis/blob/main/qa194.csv)
-* [xqg237.csv](https://github.com/MrResor/Master-Thesis/blob/main/xqg237.csv)
+* Concorde executable (https://www.math.uwaterloo.ca/tsp/concorde/downloads/downloads.htm),
+* *cygwin1.dll* file (https://www.dll-files.com/cygwin1.dll.html).
 
-Equivalents of those files with .points extension contain 2d locations of the nodes for a presentation purpose. One can create his own dataset, either from existing datasets (such as most of the provided ones, excluding five.csv) from [tsplib95](https://www.math.uwaterloo.ca/tsp/data/index.html) or generate your own data (as was done with five.csv) In that case however please remember that the values in the distance matrix should be integers, otherwise the concorde program will not accept them.
+Putting them both in the program location also enables the Concorde software to work.
 
-Next, available methods can be chosen, names in the program are as follows:
+## Application usage
 
-* ants
-* genetic
-* 2-opt
-* sea
-* pso
-* concorde
+The following commands should be entered in the command line to run the program
 
-For the algorithms appropriate modifications to the variables impacting the solution may be done. Examples are number of tours for Ant colony system or probability of mutation for genetic algorithm. In any case please run -h flag to see the list of variable that may be modified as well as default values.
+```
+python main.py [-h] [-l] path {ants,genetic,sea,pso,2-opt,concorde}
+```
 
-Note: Activating venv before the given command may be necessary to use the versions of packages used during developement
+where '-h' is a help flag for the program, '-l' is a flag that enables logging, 'path' is the path to a data set file, , and the last element is the algorithm to be run
 
+```powershell
+python main.py -l ./datasets/five.csv genetic
+```
 
-## License
+Each of the algorithms has its own help flag ('-h'), where the modifiable modifiable elements are described. Example
 
-None
+```powershell
+python main.py ./datasets/five.csv genetic -h
+```
+
+results in output
+
+```
+usage: TSP solver path genetic [-h] [-P] [-n] [-p] [-T]
+
+optional arguments:
+  -h, --help                  Show this help message and exit.
+  -P, --initial-population    Size of initial population. (default: 250)
+  -n, --children-multiplier   Multiplier for children populaion size (P * n) (default: 0.8)
+  -p, --mutation-probability  Mutation rate for offsprings. (default: 0.5)
+  -T, --generation-count      Number of generations. (default: 500)
+```
+
+An example of changing algorithm parameters can be seen bellow, where for the ant algorithm the number of tours ('-t') was to 100 and the evaporation coefficient ('-p') was set to 0.4
+
+```
+python main.py ./datasets/ulysses16.csv ants -t 100 -p 0.4
+```
+
+The results are displayed in three lines. The first line reports the execution time in seconds, the next line presents the shortest distance found by the algorithm, and the last shows the order of nodes that provided the shortest distance.
+
+```
+3.1937631
+6889.0
+15->2->1->3->7->0->11->12->13->6->5->14->4->10->8->9
+```

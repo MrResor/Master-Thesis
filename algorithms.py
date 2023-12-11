@@ -59,7 +59,6 @@ class Genetic:
         self.d = d
         self.size = size
         self.parents_and_best()
-
         # Simulate all the generations
         self.mating_pool = int(self.n*self.P)
         if self.mating_pool & 0x1:
@@ -166,10 +165,10 @@ class Genetic:
         """ Finish up function logging information about path and it's lenght.
             Receives time when program was started as a float.
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -181,6 +180,9 @@ class Genetic:
             '->'.join([str(int(v)) for v in self.best[:-1]]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(self.best[-1]))
+        print('->'.join([str(int(v)) for v in self.best[:-1]]))
 
 
 class Ant:
@@ -313,10 +315,10 @@ class Ant:
             Receives time when program was started as a float and a best
             solution as np.ndarray.
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -328,6 +330,9 @@ class Ant:
             '->'.join([str(v) for v in best[:-1]]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(best[-1]))
+        print('->'.join([str(v) for v in best[:-1]]))
 
 
 class Smallest_Edge_Algorithm:
@@ -462,9 +467,10 @@ class Smallest_Edge_Algorithm:
         path = np.array(path[:, 0]).astype('int32')
         sol = self.init_d[path, np.roll(path, 1)].sum()
 
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -476,6 +482,9 @@ class Smallest_Edge_Algorithm:
             '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(sol))
+        print('->'.join([str(v) for v in path]))
 
 
 class Particle_Swarm_Optimisation:
@@ -530,7 +539,6 @@ class Particle_Swarm_Optimisation:
             extra={'runtime': perf_counter() - start}
         )
         self.setup()
-
         for i in range(self.i):
             logging.info(
                 'Iteration %s',
@@ -542,7 +550,7 @@ class Particle_Swarm_Optimisation:
                 self.calc_velocity_and_position(particle, pbest, V)
                 if particle[-1] < pbest[-1]:
                     pbest = particle.copy()
-            candidate = self.particles[np.argmin(self.particles[-1]), :]
+            candidate = self.particles[np.argmin(self.particles[:, -1]), :]
             if candidate[-1] < self.gbest[-1]:
                 self.gbest = candidate.copy()
         self.finish(start)
@@ -567,18 +575,19 @@ class Particle_Swarm_Optimisation:
             pbest: np.ndarray,
             V: np.ndarray
         ) -> None:
+
         """ Calculates the velocity of the particle, and using this velocity
             updates the positiion of the particle. Takes particle, it's best
             position so far and Velocity as parameters.
         """
 
-        p = particle[:-1].astype('int32')
+        p = particle[:-1].astype('int32').copy()
         y = np.array([1 - 2 * (np.random.rand() < 0.5) if x == pb and x == gb
             else int(x == gb) - int(x == pb) for (x, pb, gb) in zip(p, pbest, self.gbest)])
         r1, r2 = np.random.rand(2)
-        V1 = self.c1 * V + r1 *self.c2 * (- 1 - y) + r2 * self.c3 * (1 - y)
+        V1 = self.c1 * V + r1 * self.c2 * (- 1 - y) + r2 * self.c3 * (1 - y)
         lam = V1 + y
-        alpha = 0.35
+        alpha = 0.3
         y = [int(v > alpha) - int(v < -alpha) for v in lam]
         new_p = np.full_like(p, self.size + 1, dtype='int32')
         for j, v in enumerate(y):
@@ -593,17 +602,17 @@ class Particle_Swarm_Optimisation:
                 while (r in new_p):
                     r = np.random.randint(self.size)
                 new_p[j] = r
-        p[:] = new_p.copy()
-        particle[-1] = self.d[p, np.roll(p, -1)].sum()
+        particle[:-1] = new_p.copy()
+        particle[-1] = self.d[new_p, np.roll(new_p, -1)].sum()
 
     def finish(self, start: float) -> None:
         """ Finish up function logging information about path and it's lenght.
             Takes time when p[rogram started in float format as an input.]
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -615,7 +624,10 @@ class Particle_Swarm_Optimisation:
             '->'.join([str(v) for v in self.gbest[:-1]]),
             extra={'runtime': 0}
         )
-        
+        print(end)
+        print(str(self.gbest[-1]))
+        print('->'.join([str(v) for v in self.gbest[:-1]]))
+
 
 class Opt2:
     """ Class of 2-Opt Algorithm. Holds all the variables and functions
@@ -638,7 +650,7 @@ class Opt2:
         """ Runs the algorithm. Takes distance matrix and number of nodes and
             performs the algorithm.
         """
-        
+
         self.d = d
         self.size = size
         start = perf_counter()
@@ -676,10 +688,10 @@ class Opt2:
             shortest path as a float and the shortest path in the form of
             np.ndarray.
         """
-
+        end = perf_counter() - start
         logging.info(
             'Finished.',
-            extra={'runtime': perf_counter() - start}
+            extra={'runtime': end}
         )
         logging.info(
             'Best Distance: %s',
@@ -691,6 +703,9 @@ class Opt2:
             '->'.join([str(v) for v in path]),
             extra={'runtime': 0}
         )
+        print(end)
+        print(str(cur_len))
+        print('->'.join([str(v) for v in path]))
 
 
 class Concorde:
@@ -711,7 +726,7 @@ class Concorde:
         """
 
         pass
-    
+
     def run(self, d: np.ndarray, size: int) -> None:
         """ Runs the Concorde program. Takes distance matrix and number of
             nodes.
@@ -727,8 +742,7 @@ class Concorde:
         if os.name == 'nt':
             os.system('cmd /c "concorde.exe tmp.tsp > out.tmp"')
         else:
-            print('Create this for linux pls')
-            quit()
+            os.system('./concorde tmp.tsp > out.tmp')
 
         # get results out of the created files and log them
         self.get_output(size)
@@ -779,7 +793,7 @@ class Concorde:
             for el in o.strip().split():
                 path[counter] = int(el)
                 counter += 1
-        
+
         logging.info(
             'Best Distance: %s',
             str(sol),
@@ -795,6 +809,8 @@ class Concorde:
             str(prog_time),
             extra={'runtime': 0}
         )
+        print(str(sol))
+        print('->'.join([str(v) for v in path]))
 
     def cleanup(self) -> None:
         """ Remove unnecesary files created by Concorde and this program.
@@ -803,7 +819,7 @@ class Concorde:
         # clean up the mess with files.
         files = ['Otmp.mas', 'Otmp.pul', 'Otmp.sav', 'out.tmp', 'tmp.mas',
                  'tmp.pul', 'tmp.sav', 'tmp.sol', 'O.sav', 'O.pul', 'tmp.tsp',
-                 '.mas', '.pul', '.sav', '.sol', 'O.mas', ]
+                 '.mas', '.pul', '.sav', '.sol', 'O.mas', 'Otmp.res', 'tmp.res']
         for file in files:
             if os.path.isfile(file):
                 os.remove(file)
